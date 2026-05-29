@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: parkvue-cric-db
+    environment:
+      POSTGRES_USER: cric_user
+      POSTGRES_PASSWORD: cric_password
+      POSTGRES_DB: parkvue_cric_info
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Mount the init script to run automatically on first start
+      - ./01-init.sql:/docker-entrypoint-initdb.d/01-init.sql:Z
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
