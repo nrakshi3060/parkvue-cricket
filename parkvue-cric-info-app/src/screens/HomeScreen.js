@@ -35,7 +35,15 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Matches</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.header}>Matches</Text>
+        <TouchableOpacity 
+          style={styles.adminBtn}
+          onPress={() => navigation.navigate('AdminDashboard')}
+        >
+          <Text style={styles.adminBtnText}>Admin</Text>
+        </TouchableOpacity>
+      </View>
       {matches.length === 0 ? (
         <View style={styles.centered}>
           <Text>No matches found</Text>
@@ -68,7 +76,21 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#f5f5f5' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { fontSize: 24, fontWeight: 'bold', marginBottom: 16, marginTop: 40 },
+  headerRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginTop: 40, 
+    marginBottom: 16 
+  },
+  header: { fontSize: 24, fontWeight: 'bold' },
+  adminBtn: { 
+    backgroundColor: '#004d40', 
+    paddingHorizontal: 12, 
+    paddingVertical: 6, 
+    borderRadius: 4 
+  },
+  adminBtnText: { color: '#fff', fontWeight: '600' },
   matchCard: { 
     padding: 16, 
     backgroundColor: '#fff', 

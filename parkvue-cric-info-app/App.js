@@ -1,32 +1,38 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, StatusBar } from 'react-native';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
 import HomeScreen from './src/screens/HomeScreen';
 import MatchCenter from './src/screens/MatchCenter';
+import AdminDashboard from './src/screens/admin/AdminDashboard';
+import LiveScoring from './src/screens/admin/LiveScoring';
+
+const Stack = createStackNavigator();
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState('Home');
-  const [selectedMatchId, setSelectedMatchId] = useState(null);
-
-  const navigate = (screen, params) => {
-    setCurrentScreen(screen);
-    if (params?.matchId) setSelectedMatchId(params.matchId);
-  };
-
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-      {currentScreen === 'Home' ? (
-        <HomeScreen navigation={{ navigate }} />
-      ) : (
-        <MatchCenter route={{ params: { matchId: selectedMatchId } }} />
-      )}
-    </View>
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="Home">
+        <Stack.Screen 
+          name="Home" 
+          component={HomeScreen} 
+          options={{ title: 'parkvue-cric-info' }}
+        />
+        <Stack.Screen 
+          name="MatchCenter" 
+          component={MatchCenter} 
+          options={{ title: 'Match Center' }}
+        />
+        <Stack.Screen 
+          name="AdminDashboard" 
+          component={AdminDashboard} 
+          options={{ title: 'Scorer Admin' }}
+        />
+        <Stack.Screen 
+          name="LiveScoring" 
+          component={LiveScoring} 
+          options={{ title: 'Live Control' }}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-});
