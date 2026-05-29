@@ -1,0 +1,22 @@
+@startsalt
+{+
+  {* < Back | Match Center }
+  [ Live ] | [ Scorecard ] | [ Info ]
+  ===
+  PAN: 156/4 (18.0)
+  CRR: 8.66
+  ===
+  Batters | R | B
+  > J. Doe | 65 | 40
+  S. Smith | 12 | 10
+  ---
+  Bowlers | O | W/R
+  > M. Johnson | 3.0 | 1/24
+  ===
+  Recent: W 1 1 4 6 2
+  ===
+  Commentary:
+  17.6: Two runs!
+  17.5: SIX! Massive hit.
+}
+@endsalt
