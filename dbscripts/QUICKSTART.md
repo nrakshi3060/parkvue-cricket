@@ -8,28 +8,21 @@ This guide explains how to set up and run the PostgreSQL database for the `parkv
 - **Podman Compose** or **Docker Compose**
 
 ### 1. Initialize Podman (If using Podman on macOS/Windows)
-If you haven't started your Podman machine yet, run:
+If you haven't started your Podman machine yet, run these commands to ensure stability using the Apple Hypervisor:
 ```bash
-podman machine init
-podman machine start
+podman machine stop
+podman machine rm -f podman-machine-default
+CONTAINERS_MACHINE_PROVIDER=applehv podman machine init
+CONTAINERS_MACHINE_PROVIDER=applehv podman machine start
 ```
 
-## Running the Database
+### 2. Running the Full Stack
+From the **root directory** of the project, run:
+```bash
+CONTAINERS_MACHINE_PROVIDER=applehv podman compose up --build -d
+```
+*(Note: Always prepend the provider variable for consistency on macOS).*
 
-1.  **Navigate to the scripts directory**:
-    ```bash
-    cd dbscripts
-    ```
-
-2.  **Start the container**:
-    Using Podman Compose:
-    ```bash
-    podman compose up -d
-    ```
-    *Alternatively, using Docker Compose:*
-    ```bash
-    docker-compose up -d
-    ```
 
 ## Database Details
 
