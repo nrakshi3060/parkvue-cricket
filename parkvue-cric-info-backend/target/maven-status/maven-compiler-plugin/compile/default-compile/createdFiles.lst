@@ -1,0 +1,17 @@
+com/parkvue/cricinfo/backend/repository/MatchSquadRepository.class
+com/parkvue/cricinfo/backend/model/Team.class
+com/parkvue/cricinfo/backend/repository/TournamentRepository.class
+com/parkvue/cricinfo/backend/model/MatchSquad.class
+com/parkvue/cricinfo/backend/service/ScorerService.class
+com/parkvue/cricinfo/backend/controller/ScorerController.class
+com/parkvue/cricinfo/backend/model/Delivery.class
+com/parkvue/cricinfo/backend/model/Tournament.class
+com/parkvue/cricinfo/backend/model/Innings.class
+com/parkvue/cricinfo/backend/model/Player.class
+com/parkvue/cricinfo/backend/repository/PlayerRepository.class
+com/parkvue/cricinfo/backend/BackendApplication.class
+com/parkvue/cricinfo/backend/repository/MatchRepository.class
+com/parkvue/cricinfo/backend/repository/InningsRepository.class
+com/parkvue/cricinfo/backend/repository/DeliveryRepository.class
+com/parkvue/cricinfo/backend/repository/TeamRepository.class
+com/parkvue/cricinfo/backend/model/Match.class

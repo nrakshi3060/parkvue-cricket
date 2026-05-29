@@ -1,10 +1,8 @@
 package com.parkvue.cricinfo.backend.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import java.util.UUID;
 
-@Data
 @Entity
 @Table(name = "teams")
 public class Team {
@@ -17,4 +15,11 @@ public class Team {
 
     @Column(name = "short_name", nullable = false, length = 10)
     private String shortName;
+
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getShortName() { return shortName; }
+    public void setShortName(String shortName) { this.shortName = shortName; }
 }

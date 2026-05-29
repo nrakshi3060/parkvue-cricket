@@ -1,11 +1,9 @@
 package com.parkvue.cricinfo.backend.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import java.time.LocalDate;
 import java.util.UUID;
 
-@Data
 @Entity
 @Table(name = "tournaments")
 public class Tournament {
@@ -24,4 +22,15 @@ public class Tournament {
 
     @Column(length = 50)
     private String status;
+
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public LocalDate getStartDate() { return startDate; }
+    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+    public LocalDate getEndDate() { return endDate; }
+    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }

@@ -1,0 +1,17 @@
+/Users/rakshithnagaraju/parkvue-cricket/parkvue-cric-info-backend/src/main/java/com/parkvue/cricinfo/backend/model/Player.java
+/Users/rakshithnagaraju/parkvue-cricket/parkvue-cric-info-backend/src/main/java/com/parkvue/cricinfo/backend/repository/MatchSquadRepository.java
+/Users/rakshithnagaraju/parkvue-cricket/parkvue-cric-info-backend/src/main/java/com/parkvue/cricinfo/backend/repository/DeliveryRepository.java
+/Users/rakshithnagaraju/parkvue-cricket/parkvue-cric-info-backend/src/main/java/com/parkvue/cricinfo/backend/model/Team.java
+/Users/rakshithnagaraju/parkvue-cricket/parkvue-cric-info-backend/src/main/java/com/parkvue/cricinfo/backend/model/MatchSquad.java
+/Users/rakshithnagaraju/parkvue-cricket/parkvue-cric-info-backend/src/main/java/com/parkvue/cricinfo/backend/repository/MatchRepository.java
+/Users/rakshithnagaraju/parkvue-cricket/parkvue-cric-info-backend/src/main/java/com/parkvue/cricinfo/backend/service/ScorerService.java
+/Users/rakshithnagaraju/parkvue-cricket/parkvue-cric-info-backend/src/main/java/com/parkvue/cricinfo/backend/model/Delivery.java
+/Users/rakshithnagaraju/parkvue-cricket/parkvue-cric-info-backend/src/main/java/com/parkvue/cricinfo/backend/repository/TeamRepository.java
+/Users/rakshithnagaraju/parkvue-cricket/parkvue-cric-info-backend/src/main/java/com/parkvue/cricinfo/backend/repository/PlayerRepository.java
+/Users/rakshithnagaraju/parkvue-cricket/parkvue-cric-info-backend/src/main/java/com/parkvue/cricinfo/backend/controller/ScorerController.java
+/Users/rakshithnagaraju/parkvue-cricket/parkvue-cric-info-backend/src/main/java/com/parkvue/cricinfo/backend/repository/TournamentRepository.java
+/Users/rakshithnagaraju/parkvue-cricket/parkvue-cric-info-backend/src/main/java/com/parkvue/cricinfo/backend/model/Match.java
+/Users/rakshithnagaraju/parkvue-cricket/parkvue-cric-info-backend/src/main/java/com/parkvue/cricinfo/backend/model/Innings.java
+/Users/rakshithnagaraju/parkvue-cricket/parkvue-cric-info-backend/src/main/java/com/parkvue/cricinfo/backend/BackendApplication.java
+/Users/rakshithnagaraju/parkvue-cricket/parkvue-cric-info-backend/src/main/java/com/parkvue/cricinfo/backend/repository/InningsRepository.java
+/Users/rakshithnagaraju/parkvue-cricket/parkvue-cric-info-backend/src/main/java/com/parkvue/cricinfo/backend/model/Tournament.java

@@ -1,11 +1,9 @@
 package com.parkvue.cricinfo.backend.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-@Data
 @Entity
 @Table(name = "innings")
 public class Innings {
@@ -36,4 +34,21 @@ public class Innings {
 
     @Column(name = "total_overs")
     private BigDecimal totalOvers = BigDecimal.ZERO;
+
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+    public Match getMatch() { return match; }
+    public void setMatch(Match match) { this.match = match; }
+    public Team getBattingTeam() { return battingTeam; }
+    public void setBattingTeam(Team battingTeam) { this.battingTeam = battingTeam; }
+    public Team getBowlingTeam() { return bowlingTeam; }
+    public void setBowlingTeam(Team bowlingTeam) { this.bowlingTeam = bowlingTeam; }
+    public Integer getInningsNumber() { return inningsNumber; }
+    public void setInningsNumber(Integer inningsNumber) { this.inningsNumber = inningsNumber; }
+    public Integer getTotalRuns() { return totalRuns; }
+    public void setTotalRuns(Integer totalRuns) { this.totalRuns = totalRuns; }
+    public Integer getTotalWickets() { return totalWickets; }
+    public void setTotalWickets(Integer totalWickets) { this.totalWickets = totalWickets; }
+    public BigDecimal getTotalOvers() { return totalOvers; }
+    public void setTotalOvers(BigDecimal totalOvers) { this.totalOvers = totalOvers; }
 }
