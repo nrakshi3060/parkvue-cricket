@@ -1,0 +1,29 @@
+@startuml
+left to right direction
+actor "Scorer (Admin)" as Scorer
+actor "Score Viewer (Public)" as Viewer
+
+package "parkvue-cric-info System" {
+  usecase "Manage Tournaments" as UC1
+  usecase "Register Teams & Players" as UC2
+  usecase "Initialize Match" as UC3
+  usecase "Input Ball-by-Ball Data" as UC4
+  usecase "Correct Errors (Undo/Edit)" as UC5
+  
+  usecase "View Live Scores" as UC6
+  usecase "View Match Center/Commentary" as UC7
+  usecase "View Player Stats & Tables" as UC8
+}
+
+Scorer --> UC1
+Scorer --> UC2
+Scorer --> UC3
+Scorer --> UC4
+Scorer --> UC5
+
+Viewer --> UC6
+Viewer --> UC7
+Viewer --> UC8
+
+UC4 .> UC6 : triggers update
+@enduml

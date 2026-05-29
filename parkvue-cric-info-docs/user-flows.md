@@ -1,5 +1,10 @@
 # User Flows: parkvue-cric-info
 
+## Visual Overviews
+- [Use Case Diagram](./use-cases.puml): Roles and their interactions with the system.
+- [Live Scoring Sequence](./scoring-sequence.puml): The technical flow of a ball being bowled and scored.
+- [Match State Diagram](./match-state.puml): The lifecycle of a match from start to finish.
+
 ## Personas
 
 1. **The Scorer (Admin/Privileged)**

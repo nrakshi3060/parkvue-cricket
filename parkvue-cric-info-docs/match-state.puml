@@ -1,0 +1,23 @@
+@startuml
+title Match Lifecycle State Diagram
+
+[*] --> Upcoming : Match Scheduled
+
+state Upcoming {
+  [*] --> PreMatch
+  PreMatch --> SquadsDefined : Select Playing XI
+  SquadsDefined --> TossCompleted : Conduct Toss
+}
+
+Upcoming --> Live : First Ball Bowled
+
+state Live {
+  [*] --> Innings1
+  Innings1 --> InningsBreak : 1st Innings Complete\n(All out / Overs done)
+  InningsBreak --> Innings2 : 2nd Innings Starts
+  Innings2 --> CalculatingResult : Target Reached / All out / Overs done
+}
+
+Live --> Completed : Match Result Declared
+Completed --> [*]
+@enduml

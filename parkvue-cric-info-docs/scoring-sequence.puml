@@ -1,0 +1,33 @@
+@startuml
+title Live Scoring "Hot Path" Sequence
+
+actor Scorer
+participant "React Native App\n(Admin)" as AdminApp
+participant "Spring Boot\nAPI & Engine" as Backend
+database PostgreSQL as DB
+database Redis as Cache
+participant "Spring Boot\nSSE Emitter" as SSE
+actor "Score Viewer" as Viewer
+participant "React Native App\n(Viewer)" as ViewerApp
+
+ViewerApp -> SSE : Subscribe to Match Events (SSE)
+activate SSE
+
+Scorer -> AdminApp : Input Delivery (e.g., 4 Runs)
+AdminApp -> Backend : POST /api/matches/{id}/deliveries
+activate Backend
+
+Backend -> Backend : Calculate new state\n(score, strike rotation)
+Backend -> DB : INSERT INTO deliveries
+Backend -> DB : UPDATE innings & match (if needed)
+Backend -> Cache : SET match_{id}_live_state
+Backend -> SSE : Publish DeliveryEvent
+
+Backend --> AdminApp : 201 Created
+deactivate Backend
+AdminApp --> Scorer : UI Confirmation
+
+SSE -> ViewerApp : Event: match_update (JSON payload)
+ViewerApp --> Viewer : UI updates score & commentary instantly
+deactivate SSE
+@enduml
