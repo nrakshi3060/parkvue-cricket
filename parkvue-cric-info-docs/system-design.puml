@@ -1,0 +1,44 @@
+@startuml
+title parkvue-cric-info System Architecture
+
+package "Frontend Layer" {
+    [React Native App] <<Mobile>>
+}
+
+package "Backend Layer" {
+    [Spring Boot Service] <<API & Logic>>
+    [SSE Emitter] <<Real-time>>
+}
+
+database "Data Storage" {
+    database "PostgreSQL" as DB
+    database "Redis" as Cache
+}
+
+actor "Scorer / Admin" as Admin
+
+' Relationships
+Admin --> [Spring Boot Service] : Submit Ball Events (REST)
+
+[React Native App] --> [Spring Boot Service] : Fetch Historical Data (REST)
+[SSE Emitter] --> [React Native App] : Live Updates (SSE Stream)
+
+[Spring Boot Service] --> [SSE Emitter] : Trigger Broadcast
+[Spring Boot Service] --> DB : Persist Deliveries & Stats
+[Spring Boot Service] --> Cache : Update Live Match State
+
+[Spring Boot Service] ..> Cache : Read Live State (Fast Path)
+[Spring Boot Service] ..> DB : Read Historical Data
+
+note right of Cache
+  Stores current score,
+  batters, and bowler
+end note
+
+note bottom of DB
+  Source of truth for
+  matches, teams, players,
+  and ball-by-ball history
+end note
+
+@enduml
