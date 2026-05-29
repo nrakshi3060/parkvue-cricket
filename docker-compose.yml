@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: parkvue-cric-db
+    environment:
+      POSTGRES_USER: cric_user
+      POSTGRES_PASSWORD: cric_password
+      POSTGRES_DB: parkvue_cric_info
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./dbscripts/01-init.sql:/docker-entrypoint-initdb.d/01-init.sql:Z
+    networks:
+      - cric-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: parkvue-cric-cache
+    ports:
+      - "6379:6379"
+    networks:
+      - cric-network
+
+  backend:
+    build:
+      context: ./parkvue-cric-info-backend
+      dockerfile: Dockerfile
+    container_name: parkvue-cric-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/parkvue_cric_info
+      SPRING_DATASOURCE_USERNAME: cric_user
+      SPRING_DATASOURCE_PASSWORD: cric_password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - cric-network
+
+networks:
+  cric-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
