@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   StyleSheet, Text, View, FlatList, TouchableOpacity, 
   ActivityIndicator, Modal, TextInput, Alert, SafeAreaView, ScrollView, StatusBar
@@ -32,6 +32,14 @@ export default function ManageEntityScreen({ route, navigation }) {
   const [allTournaments, setAllTournaments] = useState([]);
   const [selectorVisible, setSelectorVisible] = useState(false);
   const [selectorConfig, setSelectorConfig] = useState({ title: '', options: [], field: '', displayField: '' });
+
+  const getEntitySingular = useCallback(() => {
+    if (entityType === 'matches') return 'Match';
+    if (entityType === 'players') return 'Player';
+    if (entityType === 'teams') return 'Team';
+    if (entityType === 'tournaments') return 'Tournament';
+    return entityType.slice(0, -1);
+  }, [entityType]);
 
   useEffect(() => {
     navigation.setOptions({ 
@@ -74,7 +82,6 @@ export default function ManageEntityScreen({ route, navigation }) {
   };
 
   const handleSave = async () => {
-    // Basic Validation for Matches
     if (entityType === 'matches') {
         if (!formData.tournament?.id || !formData.team1?.id || !formData.team2?.id) {
             Alert.alert("Required Fields", "Please select Tournament and both Teams.");
@@ -106,9 +113,9 @@ export default function ManageEntityScreen({ route, navigation }) {
   };
 
   const handleDelete = (id) => {
-    Alert.alert('Confirm Delete', 'This action cannot be undone and will remove all associated scoring data.', [
+    Alert.alert('Confirm Delete', 'This action cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete Permanently', style: 'destructive', onPress: async () => {
+      { text: 'Delete', style: 'destructive', onPress: async () => {
         try {
           if (entityType === 'tournaments') await AdminService.deleteTournament(id);
           if (entityType === 'teams') await AdminService.deleteTeam(id);
@@ -122,11 +129,11 @@ export default function ManageEntityScreen({ route, navigation }) {
 
   const handleSquadPress = (match) => {
     Alert.alert(
-      'Manage Match Squad',
-      'Select a team to edit their playing XI.',
+      'Manage Squad',
+      'Select a team:',
       [
-        { text: match.team1?.shortName || 'Team 1', onPress: () => navigation.navigate('ManageSquad', { matchId: match.id, teamId: match.team1.id, teamName: match.team1.name }) },
-        { text: match.team2?.shortName || 'Team 2', onPress: () => navigation.navigate('ManageSquad', { matchId: match.id, teamId: match.team2.id, teamName: match.team2.name }) },
+        { text: match.team1?.name, onPress: () => navigation.navigate('ManageSquad', { matchId: match.id, teamId: match.team1.id, teamName: match.team1.name }) },
+        { text: match.team2?.name, onPress: () => navigation.navigate('ManageSquad', { matchId: match.id, teamId: match.team2.id, teamName: match.team2.name }) },
         { text: 'Cancel', style: 'cancel' }
       ]
     );
@@ -135,7 +142,6 @@ export default function ManageEntityScreen({ route, navigation }) {
   const openModal = (item = null) => {
     setEditingItem(item);
     if (item) {
-        // Prepare names for match display
         const initialForm = { ...item };
         if (entityType === 'matches') {
             initialForm.tournamentName = item.tournament?.name;
@@ -152,6 +158,10 @@ export default function ManageEntityScreen({ route, navigation }) {
   const openSelector = (title, options, field, displayField) => {
     setSelectorConfig({ title, options, field, displayField });
     setSelectorVisible(true);
+  };
+
+  const updateFormField = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const MatchCard = ({ item }) => {
@@ -240,34 +250,34 @@ export default function ManageEntityScreen({ route, navigation }) {
       <Modal visible={modalVisible} animationType="slide">
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{editingItem ? 'Edit' : 'Create New'} {entityType.slice(0, -1)}</Text>
+            <Text style={styles.modalTitle}>{editingItem ? 'Edit' : 'Create New'} {getEntitySingular()}</Text>
             <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeBtn}>
                 <Text style={styles.closeIcon}>✕</Text>
             </TouchableOpacity>
           </View>
           
-          <ScrollView style={{ padding: 25 }}>
+          <ScrollView style={{ padding: 25 }} keyboardShouldPersistTaps="handled">
             {entityType === 'teams' && (
               <>
                 <Text style={styles.label}>TEAM NAME</Text>
-                <TextInput placeholder="e.g. Parkvue Panthers" style={styles.input} value={formData.name} onChangeText={v => setFormData({...formData, name: v})} />
+                <TextInput placeholder="e.g. Parkvue Panthers" style={styles.input} value={formData.name} onChangeText={v => updateFormField('name', v)} />
                 <Text style={styles.label}>ABBREVIATION</Text>
-                <TextInput placeholder="e.g. PVP" style={styles.input} value={formData.shortName} onChangeText={v => setFormData({...formData, shortName: v})} />
+                <TextInput placeholder="e.g. PVP" style={styles.input} value={formData.shortName} onChangeText={v => updateFormField('shortName', v)} />
               </>
             )}
             {entityType === 'players' && (
               <>
                 <Text style={styles.label}>FIRST NAME</Text>
-                <TextInput placeholder="e.g. John" style={styles.input} value={formData.firstName} onChangeText={v => setFormData({...formData, firstName: v})} />
+                <TextInput placeholder="e.g. John" style={styles.input} value={formData.firstName} onChangeText={v => updateFormField('firstName', v)} />
                 <Text style={styles.label}>LAST NAME</Text>
-                <TextInput placeholder="e.g. Smith" style={styles.input} value={formData.lastName} onChangeText={v => setFormData({...formData, lastName: v})} />
+                <TextInput placeholder="e.g. Smith" style={styles.input} value={formData.lastName} onChangeText={v => updateFormField('lastName', v)} />
                 <Text style={styles.label}>ROLE</Text>
                 <View style={styles.chipRow}>
                   {['Batsman', 'Bowler', 'All-rounder', 'WK'].map(role => (
                     <TouchableOpacity 
                       key={role} 
                       style={[styles.chip, formData.role === role && styles.chipActive]} 
-                      onPress={() => setFormData({...formData, role: role})}
+                      onPress={() => updateFormField('role', role)}
                     >
                       <Text style={[styles.chipText, formData.role === role && styles.whiteText]}>{role}</Text>
                     </TouchableOpacity>
@@ -278,9 +288,9 @@ export default function ManageEntityScreen({ route, navigation }) {
             {entityType === 'tournaments' && (
               <>
                 <Text style={styles.label}>TOURNAMENT NAME</Text>
-                <TextInput placeholder="e.g. Summer League 2024" style={styles.input} value={formData.name} onChangeText={v => setFormData({...formData, name: v})} />
+                <TextInput placeholder="e.g. Summer League 2024" style={styles.input} value={formData.name} onChangeText={v => updateFormField('name', v)} />
                 <Text style={styles.label}>STATUS</Text>
-                <TextInput placeholder="Upcoming / Ongoing / Completed" style={styles.input} value={formData.status} onChangeText={v => setFormData({...formData, status: v})} />
+                <TextInput placeholder="Upcoming / Ongoing / Completed" style={styles.input} value={formData.status} onChangeText={v => updateFormField('status', v)} />
               </>
             )}
 
@@ -292,7 +302,7 @@ export default function ManageEntityScreen({ route, navigation }) {
                     style={styles.selectorBtn} 
                     onPress={() => openSelector('Select Tournament', allTournaments, 'tournament', 'tournamentName')}
                 >
-                    <Text style={[styles.selectorBtnText, !formData.tournament && {color: '#999'}]}>
+                    <Text style={[styles.selectorBtnText, !formData.tournamentName && {color: '#999'}]}>
                         {formData.tournamentName || 'Select Tournament...'}
                     </Text>
                 </TouchableOpacity>
@@ -305,7 +315,7 @@ export default function ManageEntityScreen({ route, navigation }) {
                             style={styles.selectorBtn} 
                             onPress={() => openSelector('Select Team 1', allTeams, 'team1', 'team1Name')}
                         >
-                            <Text style={[styles.selectorBtnText, !formData.team1 && {color: '#999'}]}>
+                            <Text style={[styles.selectorBtnText, !formData.team1Name && {color: '#999'}]}>
                                 {formData.team1Name || 'Pick Team...'}
                             </Text>
                         </TouchableOpacity>
@@ -317,7 +327,7 @@ export default function ManageEntityScreen({ route, navigation }) {
                             style={styles.selectorBtn} 
                             onPress={() => openSelector('Select Team 2', allTeams, 'team2', 'team2Name')}
                         >
-                            <Text style={[styles.selectorBtnText, !formData.team2 && {color: '#999'}]}>
+                            <Text style={[styles.selectorBtnText, !formData.team2Name && {color: '#999'}]}>
                                 {formData.team2Name || 'Pick Team...'}
                             </Text>
                         </TouchableOpacity>
@@ -326,7 +336,12 @@ export default function ManageEntityScreen({ route, navigation }) {
 
                 <Text style={styles.sectionHeader}>LOGISTICS & STATUS</Text>
                 <Text style={styles.label}>VENUE / GROUND</Text>
-                <TextInput placeholder="e.g. Central Park Ground" style={styles.input} value={formData.venue} onChangeText={v => setFormData({...formData, venue: v})} />
+                <TextInput 
+                    placeholder="e.g. Central Park Ground" 
+                    style={styles.input} 
+                    value={formData.venue} 
+                    onChangeText={v => updateFormField('venue', v)} 
+                />
                 
                 <Text style={styles.label}>MATCH STATUS</Text>
                 <View style={styles.chipRow}>
@@ -334,7 +349,7 @@ export default function ManageEntityScreen({ route, navigation }) {
                     <TouchableOpacity 
                       key={s} 
                       style={[styles.chip, formData.status === s && styles.chipActive]} 
-                      onPress={() => setFormData({...formData, status: s})}
+                      onPress={() => updateFormField('status', s)}
                     >
                       <Text style={[styles.chipText, formData.status === s && styles.whiteText]}>{s}</Text>
                     </TouchableOpacity>
@@ -368,11 +383,11 @@ export default function ManageEntityScreen({ route, navigation }) {
                         <TouchableOpacity 
                             style={styles.optionBtn} 
                             onPress={() => { 
-                                setFormData({
-                                    ...formData, 
+                                setFormData(prev => ({
+                                    ...prev, 
                                     [selectorConfig.field]: {id: item.id}, 
                                     [selectorConfig.displayField]: item.name
-                                }); 
+                                })); 
                                 setSelectorVisible(false); 
                             }}
                         >
@@ -393,7 +408,6 @@ export default function ManageEntityScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: THEME.background },
   listContent: { padding: 20 },
-  // Verbose Match Card Styles
   verboseCard: { 
     backgroundColor: '#fff', 
     borderRadius: 24, 
@@ -444,18 +458,13 @@ const styles = StyleSheet.create({
     alignItems: 'center' 
   },
   iconText: { fontSize: 18 },
-
-  // Generic Card Styles
   genericCard: { backgroundColor: '#fff', padding: 18, borderRadius: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', elevation: 2 },
   genericTitle: { fontSize: 16, fontWeight: 'bold', color: THEME.primary },
   genericSubtitle: { fontSize: 12, color: THEME.muted, marginTop: 2 },
   genericActions: { flexDirection: 'row', gap: 15 },
   actionLink: { padding: 5 },
-
   fab: { position: 'absolute', right: 25, bottom: 25, width: 60, height: 60, borderRadius: 30, backgroundColor: THEME.primary, justifyContent: 'center', alignItems: 'center', elevation: 8 },
   fabText: { color: '#fff', fontSize: 32, fontWeight: '300' },
-  
-  // Modal Styles
   modalContainer: { flex: 1, backgroundColor: '#fff' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 25, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
   modalTitle: { fontSize: 20, fontWeight: '900', color: THEME.primary, letterSpacing: -0.5 },
@@ -476,8 +485,6 @@ const styles = StyleSheet.create({
   whiteText: { color: '#fff' },
   saveBtn: { backgroundColor: THEME.primary, padding: 20, borderRadius: 15, marginTop: 20, alignItems: 'center', shadowColor: THEME.primary, shadowOpacity: 0.3, shadowRadius: 10, elevation: 5 },
   saveBtnText: { color: '#fff', fontWeight: 'bold', letterSpacing: 1 },
-
-  // Selector Overlay
   overlay: { flex: 1, backgroundColor: 'rgba(11, 36, 71, 0.8)', justifyContent: 'flex-end' },
   selectorContent: { backgroundColor: '#fff', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 25, maxHeight: '80%' },
   selectorHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
