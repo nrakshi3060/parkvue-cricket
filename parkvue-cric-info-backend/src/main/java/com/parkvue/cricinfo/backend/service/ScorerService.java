@@ -39,6 +39,7 @@ public class ScorerService {
     public Tournament createTournament(Tournament tournament) { return tournamentRepository.save(tournament); }
     public Tournament getTournamentById(UUID id) { return tournamentRepository.findById(id).orElse(null); }
     
+    @Transactional
     public Tournament updateTournament(UUID id, Tournament details) {
         Tournament t = tournamentRepository.findById(id).orElseThrow();
         t.setName(details.getName());
@@ -47,6 +48,8 @@ public class ScorerService {
         t.setStatus(details.getStatus());
         return tournamentRepository.save(t);
     }
+    
+    @Transactional
     public void deleteTournament(UUID id) { tournamentRepository.deleteById(id); }
 
     // --- Team Methods ---
@@ -54,12 +57,15 @@ public class ScorerService {
     public Team createTeam(Team team) { return teamRepository.save(team); }
     public Team getTeamById(UUID id) { return teamRepository.findById(id).orElse(null); }
     
+    @Transactional
     public Team updateTeam(UUID id, Team details) {
         Team t = teamRepository.findById(id).orElseThrow();
         t.setName(details.getName());
         t.setShortName(details.getShortName());
         return teamRepository.save(t);
     }
+    
+    @Transactional
     public void deleteTeam(UUID id) { teamRepository.deleteById(id); }
 
     // --- Player Methods ---
@@ -70,6 +76,7 @@ public class ScorerService {
     }
     public Player getPlayerById(UUID id) { return playerRepository.findById(id).orElse(null); }
     
+    @Transactional
     public Player updatePlayer(UUID id, Player details) {
         Player p = playerRepository.findById(id).orElseThrow();
         p.setFirstName(details.getFirstName());
@@ -89,6 +96,8 @@ public class ScorerService {
         if (r.contains("wk") || r.contains("keeper")) return "WK";
         return "Batsman"; // Default
     }
+    
+    @Transactional
     public void deletePlayer(UUID id) { playerRepository.deleteById(id); }
 
     // --- Match Methods ---
@@ -96,6 +105,7 @@ public class ScorerService {
     public Match createMatch(Match match) { return matchRepository.save(match); }
     public Match getMatchById(UUID id) { return matchRepository.findById(id).orElse(null); }
     
+    @Transactional
     public Match updateMatch(UUID id, Match details) {
         Match m = matchRepository.findById(id).orElseThrow();
         m.setTournament(details.getTournament());
@@ -108,7 +118,26 @@ public class ScorerService {
         m.setTossDecision(details.getTossDecision());
         return matchRepository.save(m);
     }
-    public void deleteMatch(UUID id) { matchRepository.deleteById(id); }
+    
+    @Transactional
+    public void deleteMatch(UUID id) { 
+        // Manually delete related entities if database cascade is not triggered
+        // This adds extra safety
+        inningsRepository.findAll().stream()
+            .filter(i -> i.getMatch().getId().equals(id))
+            .forEach(i -> {
+                deliveryRepository.findAll().stream()
+                    .filter(d -> d.getInnings().getId().equals(i.getId()))
+                    .forEach(d -> deliveryRepository.delete(d));
+                inningsRepository.delete(i);
+            });
+        
+        matchSquadRepository.findAll().stream()
+            .filter(ms -> ms.getMatch().getId().equals(id))
+            .forEach(ms -> matchSquadRepository.delete(ms));
+            
+        matchRepository.deleteById(id); 
+    }
 
     // --- MatchSquad Methods ---
     public List<MatchSquad> getSquadByMatchId(UUID matchId) {
@@ -116,10 +145,14 @@ public class ScorerService {
                 .filter(s -> s.getMatch().getId().equals(matchId))
                 .toList();
     }
+    @Transactional
     public MatchSquad addPlayerToSquad(MatchSquad squad) { return matchSquadRepository.save(squad); }
+    
+    @Transactional
     public void removePlayerFromSquad(UUID id) { matchSquadRepository.deleteById(id); }
 
     // --- Innings Methods ---
+    @Transactional
     public Innings createInnings(Innings innings) { return inningsRepository.save(innings); }
     public List<Innings> getInningsByMatchId(UUID matchId) {
         return inningsRepository.findAll().stream()
