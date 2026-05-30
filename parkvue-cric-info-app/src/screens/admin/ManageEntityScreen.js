@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, Text, View, FlatList, TouchableOpacity, 
-  ActivityIndicator, Modal, TextInput, Alert, SafeAreaView 
+  ActivityIndicator, Modal, TextInput, Alert, SafeAreaView, ScrollView 
 } from 'react-native';
 import { AdminService } from '../../services/AdminService';
 
