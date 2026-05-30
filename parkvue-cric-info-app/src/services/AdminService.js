@@ -9,12 +9,16 @@ const fetchWrapper = async (url, options = {}) => {
         ...options.headers,
       },
     });
+
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || 'API request failed');
     }
-    if (response.status === 204) return true;
-    return await response.json();
+
+    // Safely handle empty response bodies (common for successful DELETE)
+    const text = await response.text();
+    return text ? JSON.parse(text) : true;
+    
   } catch (error) {
     console.error(`AdminService Error (${url}):`, error);
     throw error;
