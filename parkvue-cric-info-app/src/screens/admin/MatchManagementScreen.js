@@ -220,6 +220,19 @@ export default function MatchManagementScreen({ navigation }) {
             <Text style={styles.label}>VENUE</Text>
             <TextInput style={styles.input} value={venue} onChangeText={setVenue} placeholder="Enter Venue" />
 
+            <Text style={styles.label}>MATCH STATUS</Text>
+            <View style={styles.chipRow}>
+              {['Upcoming', 'Live', 'Completed'].map(s => (
+                <TouchableOpacity 
+                  key={s} 
+                  style={[styles.chip, status === s && styles.chipActive]} 
+                  onPress={() => setStatus(s)}
+                >
+                  <Text style={[styles.chipText, status === s && styles.whiteText]}>{s}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
             <TouchableOpacity style={styles.saveBtn} onPress={handleSave}><Text style={styles.saveBtnText}>SAVE MATCH FIXTURE</Text></TouchableOpacity>
           </ScrollView>
 
