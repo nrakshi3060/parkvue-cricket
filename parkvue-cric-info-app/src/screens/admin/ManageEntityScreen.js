@@ -85,15 +85,34 @@ export default function ManageEntityScreen({ route, navigation }) {
     setModalVisible(true);
   };
 
+  const handleSquadPress = (match) => {
+    Alert.alert(
+      'Select Team',
+      'Which squad do you want to manage?',
+      [
+        { text: match.team1?.name, onPress: () => navigation.navigate('ManageSquad', { matchId: match.id, teamId: match.team1.id, teamName: match.team1.name }) },
+        { text: match.team2?.name, onPress: () => navigation.navigate('ManageSquad', { matchId: match.id, teamId: match.team2.id, teamName: match.team2.name }) },
+        { text: 'Cancel', style: 'cancel' }
+      ]
+    );
+  };
+
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       <View style={{ flex: 1 }}>
         <Text style={styles.cardTitle}>
-          {item.name || `${item.firstName} ${item.lastName}` || (item.team1?.name + ' vs ' + item.team2?.name)}
+          {item.name || (item.firstName ? `${item.firstName} ${item.lastName}` : null) || (item.team1?.name + ' vs ' + item.team2?.name)}
         </Text>
-        <Text style={styles.cardSubtitle}>{item.shortName || item.role || item.venue || item.status}</Text>
+        <Text style={styles.cardSubtitle}>
+          {item.shortName || item.role || (item.venue ? `${item.venue} • ${item.status}` : item.status)}
+        </Text>
       </View>
       <View style={styles.actions}>
+        {entityType === 'matches' && (
+          <TouchableOpacity onPress={() => handleSquadPress(item)} style={styles.actionBtn}>
+            <Text style={{ color: THEME.secondary, fontWeight: 'bold' }}>Squad</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity onPress={() => openModal(item)} style={styles.actionBtn}>
           <Text style={{ color: THEME.secondary }}>Edit</Text>
         </TouchableOpacity>
