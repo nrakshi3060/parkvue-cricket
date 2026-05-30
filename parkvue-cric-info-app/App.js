@@ -5,32 +5,55 @@ import HomeScreen from './src/screens/HomeScreen';
 import MatchCenter from './src/screens/MatchCenter';
 import AdminDashboard from './src/screens/admin/AdminDashboard';
 import LiveScoring from './src/screens/admin/LiveScoring';
+import ManageEntityScreen from './src/screens/admin/ManageEntityScreen';
+import SelectMatchScoring from './src/screens/admin/SelectMatchScoring';
+import ManageSquadScreen from './src/screens/admin/ManageSquadScreen';
 
 const Stack = createStackNavigator();
 
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Home">
+      <Stack.Navigator 
+        initialRouteName="Home"
+        screenOptions={{
+          headerStyle: { backgroundColor: '#0B2447' },
+          headerTintColor: '#fff',
+          headerTitleStyle: { fontWeight: 'bold' },
+        }}
+      >
         <Stack.Screen 
           name="Home" 
           component={HomeScreen} 
-          options={{ title: 'parkvue-cric-info' }}
+          options={{ title: 'parkvue cric-info', headerShadowVisible: false }}
         />
         <Stack.Screen 
           name="MatchCenter" 
           component={MatchCenter} 
-          options={{ title: 'Match Center' }}
+          options={{ headerShown: false }} 
         />
         <Stack.Screen 
           name="AdminDashboard" 
           component={AdminDashboard} 
-          options={{ title: 'Scorer Admin' }}
+          options={{ title: 'Admin Command Center' }}
+        />
+        <Stack.Screen 
+          name="ManageEntity" 
+          component={ManageEntityScreen} 
+        />
+        <Stack.Screen 
+          name="SelectMatchScoring" 
+          component={SelectMatchScoring} 
+          options={{ title: 'Select Match' }}
+        />
+        <Stack.Screen 
+          name="ManageSquad" 
+          component={ManageSquadScreen} 
         />
         <Stack.Screen 
           name="LiveScoring" 
           component={LiveScoring} 
-          options={{ title: 'Live Control' }}
+          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>

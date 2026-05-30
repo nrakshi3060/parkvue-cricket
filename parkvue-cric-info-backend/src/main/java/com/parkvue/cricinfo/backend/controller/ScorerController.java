@@ -15,116 +15,83 @@ public class ScorerController {
     @Autowired
     private ScorerService scorerService;
 
-    // Tournament Endpoints
+    // --- Tournament Endpoints ---
     @GetMapping("/tournaments")
-    public List<Tournament> getAllTournaments() {
-        return scorerService.getAllTournaments();
-    }
-
+    public List<Tournament> getAllTournaments() { return scorerService.getAllTournaments(); }
     @PostMapping("/tournaments")
-    public Tournament createTournament(@RequestBody Tournament tournament) {
-        return scorerService.createTournament(tournament);
-    }
-
+    public Tournament createTournament(@RequestBody Tournament tournament) { return scorerService.createTournament(tournament); }
     @GetMapping("/tournaments/{id}")
     public ResponseEntity<Tournament> getTournamentById(@PathVariable UUID id) {
-        Tournament tournament = scorerService.getTournamentById(id);
-        if (tournament != null) {
-            return ResponseEntity.ok(tournament);
-        }
-        return ResponseEntity.notFound().build();
+        Tournament t = scorerService.getTournamentById(id);
+        return t != null ? ResponseEntity.ok(t) : ResponseEntity.notFound().build();
     }
+    @PutMapping("/tournaments/{id}")
+    public Tournament updateTournament(@PathVariable UUID id, @RequestBody Tournament details) { return scorerService.updateTournament(id, details); }
+    @DeleteMapping("/tournaments/{id}")
+    public void deleteTournament(@PathVariable UUID id) { scorerService.deleteTournament(id); }
 
-    // Team Endpoints
+    // --- Team Endpoints ---
     @GetMapping("/teams")
-    public List<Team> getAllTeams() {
-        return scorerService.getAllTeams();
-    }
-
+    public List<Team> getAllTeams() { return scorerService.getAllTeams(); }
     @PostMapping("/teams")
-    public Team createTeam(@RequestBody Team team) {
-        return scorerService.createTeam(team);
-    }
-
+    public Team createTeam(@RequestBody Team team) { return scorerService.createTeam(team); }
     @GetMapping("/teams/{id}")
     public ResponseEntity<Team> getTeamById(@PathVariable UUID id) {
-        Team team = scorerService.getTeamById(id);
-        if (team != null) {
-            return ResponseEntity.ok(team);
-        }
-        return ResponseEntity.notFound().build();
+        Team t = scorerService.getTeamById(id);
+        return t != null ? ResponseEntity.ok(t) : ResponseEntity.notFound().build();
     }
+    @PutMapping("/teams/{id}")
+    public Team updateTeam(@PathVariable UUID id, @RequestBody Team details) { return scorerService.updateTeam(id, details); }
+    @DeleteMapping("/teams/{id}")
+    public void deleteTeam(@PathVariable UUID id) { scorerService.deleteTeam(id); }
 
-    // Player Endpoints
+    // --- Player Endpoints ---
     @GetMapping("/players")
-    public List<Player> getAllPlayers() {
-        return scorerService.getAllPlayers();
-    }
-
+    public List<Player> getAllPlayers() { return scorerService.getAllPlayers(); }
     @PostMapping("/players")
-    public Player createPlayer(@RequestBody Player player) {
-        return scorerService.createPlayer(player);
-    }
-
+    public Player createPlayer(@RequestBody Player player) { return scorerService.createPlayer(player); }
     @GetMapping("/players/{id}")
     public ResponseEntity<Player> getPlayerById(@PathVariable UUID id) {
-        Player player = scorerService.getPlayerById(id);
-        if (player != null) {
-            return ResponseEntity.ok(player);
-        }
-        return ResponseEntity.notFound().build();
+        Player p = scorerService.getPlayerById(id);
+        return p != null ? ResponseEntity.ok(p) : ResponseEntity.notFound().build();
     }
+    @PutMapping("/players/{id}")
+    public Player updatePlayer(@PathVariable UUID id, @RequestBody Player details) { return scorerService.updatePlayer(id, details); }
+    @DeleteMapping("/players/{id}")
+    public void deletePlayer(@PathVariable UUID id) { scorerService.deletePlayer(id); }
 
-    // Match Endpoints
+    // --- Match Endpoints ---
     @GetMapping("/matches")
-    public List<Match> getAllMatches() {
-        return scorerService.getAllMatches();
-    }
-
+    public List<Match> getAllMatches() { return scorerService.getAllMatches(); }
     @PostMapping("/matches")
-    public Match createMatch(@RequestBody Match match) {
-        return scorerService.createMatch(match);
-    }
-
+    public Match createMatch(@RequestBody Match match) { return scorerService.createMatch(match); }
     @GetMapping("/matches/{id}")
     public ResponseEntity<Match> getMatchById(@PathVariable UUID id) {
-        Match match = scorerService.getMatchById(id);
-        if (match != null) {
-            return ResponseEntity.ok(match);
-        }
-        return ResponseEntity.notFound().build();
+        Match m = scorerService.getMatchById(id);
+        return m != null ? ResponseEntity.ok(m) : ResponseEntity.notFound().build();
     }
+    @PutMapping("/matches/{id}")
+    public Match updateMatch(@PathVariable UUID id, @RequestBody Match details) { return scorerService.updateMatch(id, details); }
+    @DeleteMapping("/matches/{id}")
+    public void deleteMatch(@PathVariable UUID id) { scorerService.deleteMatch(id); }
 
-    // MatchSquad Endpoints
+    // --- MatchSquad Endpoints ---
     @GetMapping("/matches/{matchId}/squad")
-    public List<MatchSquad> getSquadByMatchId(@PathVariable UUID matchId) {
-        return scorerService.getSquadByMatchId(matchId);
-    }
-
+    public List<MatchSquad> getSquadByMatchId(@PathVariable UUID matchId) { return scorerService.getSquadByMatchId(matchId); }
     @PostMapping("/squad")
-    public MatchSquad addPlayerToSquad(@RequestBody MatchSquad squad) {
-        return scorerService.addPlayerToSquad(squad);
-    }
+    public MatchSquad addPlayerToSquad(@RequestBody MatchSquad squad) { return scorerService.addPlayerToSquad(squad); }
+    @DeleteMapping("/squad/{id}")
+    public void removePlayerFromSquad(@PathVariable UUID id) { scorerService.removePlayerFromSquad(id); }
 
-    // Innings Endpoints
+    // --- Innings Endpoints ---
     @PostMapping("/innings")
-    public Innings createInnings(@RequestBody Innings innings) {
-        return scorerService.createInnings(innings);
-    }
-
+    public Innings createInnings(@RequestBody Innings innings) { return scorerService.createInnings(innings); }
     @GetMapping("/matches/{matchId}/innings")
-    public List<Innings> getInningsByMatchId(@PathVariable UUID matchId) {
-        return scorerService.getInningsByMatchId(matchId);
-    }
+    public List<Innings> getInningsByMatchId(@PathVariable UUID matchId) { return scorerService.getInningsByMatchId(matchId); }
 
-    // Delivery Endpoints
+    // --- Delivery Endpoints ---
     @PostMapping("/deliveries")
-    public Delivery submitDelivery(@RequestBody Delivery delivery) {
-        return scorerService.submitDelivery(delivery);
-    }
-
+    public Delivery submitDelivery(@RequestBody Delivery delivery) { return scorerService.submitDelivery(delivery); }
     @GetMapping("/innings/{inningsId}/deliveries")
-    public List<Delivery> getDeliveriesByInningsId(@PathVariable UUID inningsId) {
-        return scorerService.getDeliveriesByInningsId(inningsId);
-    }
+    public List<Delivery> getDeliveriesByInningsId(@PathVariable UUID inningsId) { return scorerService.getDeliveriesByInningsId(inningsId); }
 }

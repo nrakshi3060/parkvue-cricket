@@ -1,6 +1,7 @@
 package com.parkvue.cricinfo.backend.controller;
 
 import com.parkvue.cricinfo.backend.dto.MatchSummaryDTO;
+import com.parkvue.cricinfo.backend.model.Innings;
 import com.parkvue.cricinfo.backend.model.Match;
 import com.parkvue.cricinfo.backend.service.ScorerService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,11 +38,16 @@ public class MatchController {
     public MatchSummaryDTO getMatchSummary(@PathVariable UUID id) {
         MatchSummaryDTO summary = new MatchSummaryDTO();
         summary.setMatch(scorerService.getMatchById(id));
-        summary.setInnings(scorerService.getInningsByMatchId(id));
         
-        // Fetch recent deliveries for the first innings found (simplified)
-        if (!summary.getInnings().isEmpty()) {
-            summary.setRecentDeliveries(scorerService.getDeliveriesByInningsId(summary.getInnings().get(0).getId()));
+        List<Innings> allInnings = scorerService.getInningsByMatchId(id);
+        summary.setInnings(allInnings);
+        
+        // Fetch deliveries for the LATEST innings found
+        if (!allInnings.isEmpty()) {
+            Innings latestInnings = allInnings.stream()
+                    .max((i1, i2) -> i1.getInningsNumber().compareTo(i2.getInningsNumber()))
+                    .get();
+            summary.setRecentDeliveries(scorerService.getDeliveriesByInningsId(latestInnings.getId()));
         }
         
         return summary;
