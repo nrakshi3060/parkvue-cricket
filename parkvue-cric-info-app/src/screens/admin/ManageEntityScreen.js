@@ -135,7 +135,19 @@ export default function ManageEntityScreen({ route, navigation }) {
               <>
                 <TextInput placeholder="First Name" style={styles.input} value={formData.firstName} onChangeText={v => setFormData({...formData, firstName: v})} />
                 <TextInput placeholder="Last Name" style={styles.input} value={formData.lastName} onChangeText={v => setFormData({...formData, lastName: v})} />
-                <TextInput placeholder="Role (Batsman/Bowler)" style={styles.input} value={formData.role} onChangeText={v => setFormData({...formData, role: v})} />
+                
+                <Text style={styles.label}>ROLE</Text>
+                <View style={styles.chipRow}>
+                  {['Batsman', 'Bowler', 'All-rounder', 'WK'].map(role => (
+                    <TouchableOpacity 
+                      key={role} 
+                      style={[styles.chip, formData.role === role && styles.chipActive]} 
+                      onPress={() => setFormData({...formData, role: role})}
+                    >
+                      <Text style={[styles.chipText, formData.role === role && styles.whiteText]}>{role}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </>
             )}
             {entityType === 'tournaments' && (
@@ -171,6 +183,12 @@ const styles = StyleSheet.create({
   fabText: { color: '#fff', fontSize: 30, fontWeight: 'bold' },
   modalContainer: { flex: 1, backgroundColor: '#fff' },
   modalTitle: { fontSize: 20, fontWeight: 'bold', textAlign: 'center', padding: 20 },
+  label: { fontSize: 12, fontWeight: 'bold', color: THEME.muted, marginBottom: 10, letterSpacing: 1 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
+  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#ddd', backgroundColor: '#fff' },
+  chipActive: { backgroundColor: THEME.secondary, borderColor: THEME.secondary },
+  chipText: { fontSize: 12, fontWeight: '600', color: THEME.primary },
+  whiteText: { color: '#fff' },
   input: { borderWidth: 1, borderColor: '#ddd', padding: 12, borderRadius: 8, marginBottom: 15 },
   modalBtn: { padding: 15, borderRadius: 8 }
 });

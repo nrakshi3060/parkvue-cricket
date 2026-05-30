@@ -64,17 +64,30 @@ public class ScorerService {
 
     // --- Player Methods ---
     public List<Player> getAllPlayers() { return playerRepository.findAll(); }
-    public Player createPlayer(Player player) { return playerRepository.save(player); }
+    public Player createPlayer(Player player) { 
+        player.setRole(normalizeRole(player.getRole()));
+        return playerRepository.save(player); 
+    }
     public Player getPlayerById(UUID id) { return playerRepository.findById(id).orElse(null); }
     
     public Player updatePlayer(UUID id, Player details) {
         Player p = playerRepository.findById(id).orElseThrow();
         p.setFirstName(details.getFirstName());
         p.setLastName(details.getLastName());
-        p.setRole(details.getRole());
+        p.setRole(normalizeRole(details.getRole()));
         p.setBattingStyle(details.getBattingStyle());
         p.setBowlingStyle(details.getBowlingStyle());
         return playerRepository.save(p);
+    }
+
+    private String normalizeRole(String role) {
+        if (role == null) return "Batsman";
+        String r = role.trim().toLowerCase();
+        if (r.contains("batsman") || r.contains("batsmen")) return "Batsman";
+        if (r.contains("bowler")) return "Bowler";
+        if (r.contains("all") && r.contains("round")) return "All-rounder";
+        if (r.contains("wk") || r.contains("keeper")) return "WK";
+        return "Batsman"; // Default
     }
     public void deletePlayer(UUID id) { playerRepository.deleteById(id); }
 
