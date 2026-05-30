@@ -63,7 +63,7 @@ export default function MatchManagementScreen({ navigation }) {
       setAllTeams(t || []);
       setAllTournaments(tr || []);
     } catch (e) {
-      Alert.alert('Network Error', 'Failed to sync with the server.');
+      Alert.alert('Network Error', 'Could not sync with the server.');
     } finally {
       setLoading(false);
     }
@@ -163,6 +163,18 @@ export default function MatchManagementScreen({ navigation }) {
     ]);
   };
 
+  const handleSquadPress = (match) => {
+    Alert.alert(
+      'Manage Squad',
+      'Select a team to edit their playing XI:',
+      [
+        { text: match.team1?.name || 'Home Team', onPress: () => navigation.navigate('ManageSquad', { matchId: match.id, teamId: match.team1?.id, teamName: match.team1?.name }) },
+        { text: match.team2?.name || 'Away Team', onPress: () => navigation.navigate('ManageSquad', { matchId: match.id, teamId: match.team2?.id, teamName: match.team2?.name }) },
+        { text: 'Cancel', style: 'cancel' }
+      ]
+    );
+  };
+
   const StatusBadge = ({ status }) => {
     const s = status?.toLowerCase();
     const color = s === 'live' ? THEME.live : s === 'completed' ? THEME.completed : THEME.upcoming;
@@ -200,7 +212,7 @@ export default function MatchManagementScreen({ navigation }) {
         <View style={styles.cardFooter}>
             <TouchableOpacity 
                 style={styles.actionPill} 
-                onPress={() => navigation.navigate('ManageSquad', { matchId: item.id, teamId: item.team1.id, teamName: item.team1.name })}
+                onPress={() => handleSquadPress(item)}
             >
                 <Text style={styles.actionPillText}>MANAGE SQUAD</Text>
             </TouchableOpacity>
