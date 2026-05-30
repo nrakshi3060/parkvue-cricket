@@ -69,7 +69,7 @@ export default function AdminDashboard({ navigation }) {
           <TouchableOpacity 
             style={styles.heroBtn}
             activeOpacity={0.9}
-            onPress={() => navigation.navigate('ManageEntity', { entityType: 'matches' })}
+            onPress={() => navigation.navigate('MatchManagement')}
           >
             <View style={styles.heroContent}>
               <Text style={styles.heroIcon}>📅</Text>

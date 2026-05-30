@@ -8,6 +8,7 @@ import LiveScoring from './src/screens/admin/LiveScoring';
 import ManageEntityScreen from './src/screens/admin/ManageEntityScreen';
 import SelectMatchScoring from './src/screens/admin/SelectMatchScoring';
 import ManageSquadScreen from './src/screens/admin/ManageSquadScreen';
+import MatchManagementScreen from './src/screens/admin/MatchManagementScreen';
 
 const Stack = createStackNavigator();
 
@@ -54,6 +55,11 @@ export default function App() {
           name="LiveScoring" 
           component={LiveScoring} 
           options={{ headerShown: false }}
+        />
+        <Stack.Screen 
+          name="MatchManagement" 
+          component={MatchManagementScreen} 
+          options={{ title: 'Match Schedules' }}
         />
       </Stack.Navigator>
     </NavigationContainer>
