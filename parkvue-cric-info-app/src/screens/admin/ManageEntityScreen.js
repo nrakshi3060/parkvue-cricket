@@ -56,6 +56,28 @@ export default function ManageEntityScreen({ route, navigation }) {
   };
 
   const handleSave = async () => {
+    // Basic Validation
+    if (entityType === 'players') {
+        if (!formData.firstName?.trim() || !formData.lastName?.trim()) {
+            Alert.alert("Required Fields", "Both First Name and Last Name are required.");
+            return;
+        }
+        if (!formData.role) {
+            Alert.alert("Required Field", "Please select a Player Role.");
+            return;
+        }
+    }
+    if (entityType === 'teams') {
+        if (!formData.name?.trim() || !formData.shortName?.trim()) {
+            Alert.alert("Required Fields", "Team Name and Short Name are required.");
+            return;
+        }
+    }
+    if (entityType === 'tournaments' && !formData.name?.trim()) {
+        Alert.alert("Required Field", "Tournament Name is required.");
+        return;
+    }
+
     try {
       if (editingItem) {
         if (entityType === 'tournaments') await AdminService.updateTournament(editingItem.id, formData);
@@ -89,7 +111,15 @@ export default function ManageEntityScreen({ route, navigation }) {
 
   const openModal = (item = null) => {
     setEditingItem(item);
-    setFormData(item || {});
+    if (item) {
+        setFormData(item);
+    } else {
+        // Initialize with empty strings to avoid nulls on backend
+        if (entityType === 'players') setFormData({ firstName: '', lastName: '', role: '' });
+        else if (entityType === 'teams') setFormData({ name: '', shortName: '' });
+        else if (entityType === 'tournaments') setFormData({ name: '', status: 'Upcoming' });
+        else setFormData({});
+    }
     setModalVisible(true);
   };
 
