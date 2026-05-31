@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, Text, View, FlatList, TouchableOpacity, 
   ActivityIndicator, Modal, TextInput, Alert, SafeAreaView, ScrollView, StatusBar
@@ -14,7 +14,8 @@ const THEME = {
   text: '#2D3436',
   muted: '#636E72',
   danger: '#E63946',
-  white: '#FFFFFF'
+  white: '#FFFFFF',
+  border: '#F1F2F6'
 };
 
 export default function ManageEntityScreen({ route, navigation }) {
@@ -36,12 +37,6 @@ export default function ManageEntityScreen({ route, navigation }) {
   }, [entityType]);
 
   useEffect(() => {
-    navigation.setOptions({ 
-        title: `Manage ${entityType.charAt(0).toUpperCase() + entityType.slice(1)}`,
-        headerStyle: { backgroundColor: THEME.background },
-        headerTintColor: THEME.primary,
-        headerShadowVisible: false,
-    });
     loadData();
   }, [entityType]);
 
@@ -98,34 +93,48 @@ export default function ManageEntityScreen({ route, navigation }) {
     setModalVisible(true);
   };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.card}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.cardTitle}>
-          {item.name || `${item.firstName} ${item.lastName}`}
-        </Text>
-        <Text style={styles.cardSubtitle}>{item.shortName || item.role || item.status}</Text>
-      </View>
-      <View style={styles.actions}>
-        <TouchableOpacity onPress={() => openModal(item)} style={styles.actionBtn}>
-          <Ionicons name="create-outline" size={20} color={THEME.secondary} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.actionBtn}>
-          <Ionicons name="trash-outline" size={20} color={THEME.danger} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      <View style={styles.topHeader}>
+        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                <Ionicons name="arrow-back" size={24} color={THEME.primary} />
+            </TouchableOpacity>
+            <View>
+                <Text style={styles.headerTitle}>Manage {getEntityLabel()}s</Text>
+                <Text style={styles.headerSubtitle}>{data.length} records found</Text>
+            </View>
+        </View>
+        <TouchableOpacity style={styles.syncBtn} onPress={loadData}>
+            <Ionicons name="refresh-outline" size={22} color={THEME.primary} />
+        </TouchableOpacity>
+      </View>
+
       {loading ? <ActivityIndicator size="large" color={THEME.primary} style={{ marginTop: 50 }} /> : (
         <>
           <FlatList
             data={data}
-            renderItem={renderItem}
             keyExtractor={item => item.id}
-            contentContainerStyle={{ padding: 20 }}
+            contentContainerStyle={styles.listContent}
+            renderItem={({ item }) => (
+                <View style={styles.card}>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.cardTitle}>
+                        {item.name || `${item.firstName} ${item.lastName}`}
+                        </Text>
+                        <Text style={styles.cardSubtitle}>{item.shortName || item.role || item.status}</Text>
+                    </View>
+                    <View style={styles.actions}>
+                        <TouchableOpacity onPress={() => openModal(item)} style={styles.actionBtn}>
+                        <Ionicons name="create-outline" size={20} color={THEME.secondary} />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.actionBtn}>
+                        <Ionicons name="trash-outline" size={20} color={THEME.danger} />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )}
             ListEmptyComponent={<Text style={styles.emptyText}>No {entityType} found.</Text>}
           />
           <TouchableOpacity style={styles.fab} onPress={() => openModal()}>
@@ -193,7 +202,13 @@ export default function ManageEntityScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: THEME.background },
-  card: { backgroundColor: '#fff', padding: 18, borderRadius: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', elevation: 2 },
+  topHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 25, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: THEME.border },
+  backBtn: { marginRight: 15, padding: 5 },
+  headerTitle: { fontSize: 22, fontWeight: '900', color: THEME.primary, letterSpacing: -0.5 },
+  headerSubtitle: { fontSize: 13, color: THEME.muted, marginTop: 4, fontWeight: '600' },
+  syncBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: THEME.background, justifyContent: 'center', alignItems: 'center' },
+  listContent: { padding: 20 },
+  card: { backgroundColor: '#fff', padding: 20, borderRadius: 20, marginBottom: 12, flexDirection: 'row', alignItems: 'center', elevation: 3, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10 },
   cardTitle: { fontSize: 16, fontWeight: 'bold', color: THEME.primary },
   cardSubtitle: { fontSize: 12, color: THEME.muted, marginTop: 2 },
   actions: { flexDirection: 'row' },
@@ -201,15 +216,15 @@ const styles = StyleSheet.create({
   fab: { position: 'absolute', right: 25, bottom: 25, width: 65, height: 65, borderRadius: 33, backgroundColor: THEME.primary, justifyContent: 'center', alignItems: 'center', elevation: 8, shadowColor: THEME.primary, shadowOpacity: 0.3, shadowRadius: 10 },
   modalContainer: { flex: 1, backgroundColor: '#fff' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 25, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', color: THEME.primary },
+  modalTitle: { fontSize: 20, fontWeight: '900', color: THEME.primary },
   label: { fontSize: 11, fontWeight: 'bold', color: THEME.muted, marginBottom: 8, marginTop: 15, letterSpacing: 1 },
-  input: { backgroundColor: THEME.background, padding: 15, borderRadius: 12, marginBottom: 20, fontSize: 16, borderWidth: 1, borderColor: '#eee' },
+  input: { backgroundColor: THEME.background, padding: 18, borderRadius: 15, marginBottom: 20, fontSize: 16, borderWidth: 1, borderColor: '#eee' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
   chip: { paddingHorizontal: 15, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: '#ddd', backgroundColor: '#fff' },
   chipActive: { backgroundColor: THEME.primary, borderColor: THEME.primary },
   chipText: { fontSize: 13, fontWeight: '600', color: THEME.primary },
   whiteText: { color: '#fff' },
-  saveBtn: { backgroundColor: THEME.primary, padding: 20, borderRadius: 12, marginTop: 20, alignItems: 'center' },
+  saveBtn: { backgroundColor: THEME.primary, padding: 20, borderRadius: 15, marginTop: 20, alignItems: 'center', elevation: 5 },
   saveBtnText: { color: '#fff', fontWeight: 'bold', letterSpacing: 1 },
   emptyText: { textAlign: 'center', marginTop: 50, color: THEME.muted }
 });

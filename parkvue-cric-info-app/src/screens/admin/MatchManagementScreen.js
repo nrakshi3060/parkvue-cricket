@@ -3,7 +3,7 @@ import {
   StyleSheet, Text, View, FlatList, TouchableOpacity, 
   ActivityIndicator, Modal, TextInput, Alert, SafeAreaView, ScrollView, StatusBar
 } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { AdminService } from '../../services/AdminService';
 
 const THEME = {
@@ -14,11 +14,8 @@ const THEME = {
   text: '#2D3436',
   muted: '#636E72',
   danger: '#E63946',
-  live: '#E63946',
-  upcoming: '#ECA154',
-  completed: '#2A9D8F',
-  border: '#F1F2F6',
-  white: '#FFFFFF'
+  white: '#FFFFFF',
+  border: '#F1F2F6'
 };
 
 export default function MatchManagementScreen({ navigation }) {
@@ -242,9 +239,14 @@ export default function MatchManagementScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.topHeader}>
-        <View>
-            <Text style={styles.headerTitle}>Match Schedules</Text>
-            <Text style={styles.headerSubtitle}>{matches.length} fixtures in database</Text>
+        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                <Ionicons name="arrow-back" size={24} color={THEME.primary} />
+            </TouchableOpacity>
+            <View>
+                <Text style={styles.headerTitle}>Match Schedules</Text>
+                <Text style={styles.headerSubtitle}>{matches.length} fixtures in database</Text>
+            </View>
         </View>
         <TouchableOpacity style={styles.syncBtn} onPress={loadAll}>
             <Ionicons name="refresh-outline" size={22} color={THEME.primary} />
@@ -278,7 +280,7 @@ export default function MatchManagementScreen({ navigation }) {
             <View style={styles.modalHeader}>
                 <View>
                     <Text style={styles.modalLabel}>{editingMatchId ? 'EDITING FIXTURE' : 'NEW FIXTURE'}</Text>
-                    <Text style={styles.modalTitle}>{editingMatchId ? 'Update Match' : 'Schedule Match'}</Text>
+                    <Text style={styles.modalTitle}>{editingMatchId ? 'Update Match' : 'Schedule New Match'}</Text>
                 </View>
                 <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeBtn}>
                     <Ionicons name="close-outline" size={24} color={THEME.muted} />
@@ -392,7 +394,8 @@ export default function MatchManagementScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: THEME.background },
   topHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 25, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: THEME.border },
-  headerTitle: { fontSize: 24, fontWeight: '900', color: THEME.primary, letterSpacing: -0.5 },
+  backBtn: { marginRight: 15, padding: 5 },
+  headerTitle: { fontSize: 22, fontWeight: '900', color: THEME.primary, letterSpacing: -0.5 },
   headerSubtitle: { fontSize: 13, color: THEME.muted, marginTop: 4, fontWeight: '600' },
   syncBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: THEME.background, justifyContent: 'center', alignItems: 'center' },
   listContainer: { padding: 20 },
