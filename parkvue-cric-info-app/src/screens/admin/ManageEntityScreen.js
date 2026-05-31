@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   StyleSheet, Text, View, FlatList, TouchableOpacity, 
-  ActivityIndicator, Modal, TextInput, Alert, SafeAreaView, ScrollView 
+  ActivityIndicator, Modal, TextInput, Alert, SafeAreaView, ScrollView, StatusBar
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { AdminService } from '../../services/AdminService';
 
 const THEME = {
@@ -12,7 +13,8 @@ const THEME = {
   card: '#FFFFFF',
   text: '#2D3436',
   muted: '#636E72',
-  danger: '#E63946'
+  danger: '#E63946',
+  white: '#FFFFFF'
 };
 
 export default function ManageEntityScreen({ route, navigation }) {
@@ -22,6 +24,16 @@ export default function ManageEntityScreen({ route, navigation }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState({});
+
+  const getEntityLabel = useCallback(() => {
+    switch(entityType) {
+        case 'matches': return 'Match';
+        case 'players': return 'Player';
+        case 'teams': return 'Team';
+        case 'tournaments': return 'Tournament';
+        default: return 'Item';
+    }
+  }, [entityType]);
 
   useEffect(() => {
     navigation.setOptions({ 
@@ -96,10 +108,10 @@ export default function ManageEntityScreen({ route, navigation }) {
       </View>
       <View style={styles.actions}>
         <TouchableOpacity onPress={() => openModal(item)} style={styles.actionBtn}>
-          <Text style={{ color: THEME.secondary }}>Edit</Text>
+          <Ionicons name="create-outline" size={20} color={THEME.secondary} />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.actionBtn}>
-          <Text style={{ color: THEME.danger }}>Delete</Text>
+          <Ionicons name="trash-outline" size={20} color={THEME.danger} />
         </TouchableOpacity>
       </View>
     </View>
@@ -114,9 +126,10 @@ export default function ManageEntityScreen({ route, navigation }) {
             renderItem={renderItem}
             keyExtractor={item => item.id}
             contentContainerStyle={{ padding: 20 }}
+            ListEmptyComponent={<Text style={styles.emptyText}>No {entityType} found.</Text>}
           />
           <TouchableOpacity style={styles.fab} onPress={() => openModal()}>
-            <Text style={styles.fabText}>+</Text>
+            <Ionicons name="add-outline" size={32} color="#fff" />
           </TouchableOpacity>
         </>
       )}
@@ -124,8 +137,10 @@ export default function ManageEntityScreen({ route, navigation }) {
       <Modal visible={modalVisible} animationType="slide">
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{editingItem ? 'Edit' : 'Create New'} {entityType.slice(0, -1)}</Text>
-            <TouchableOpacity onPress={() => setModalVisible(false)}><Text style={styles.closeIcon}>✕</Text></TouchableOpacity>
+            <Text style={styles.modalTitle}>{editingItem ? 'Edit' : 'Create New'} {getEntityLabel()}</Text>
+            <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <Ionicons name="close-outline" size={28} color={THEME.muted} />
+            </TouchableOpacity>
           </View>
           
           <ScrollView style={{ padding: 25 }}>
@@ -167,7 +182,7 @@ export default function ManageEntityScreen({ route, navigation }) {
             )}
 
             <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-              <Text style={styles.saveBtnText}>SAVE CHANGES</Text>
+              <Text style={styles.saveBtnText}>SAVE {getEntityLabel().toUpperCase()}</Text>
             </TouchableOpacity>
           </ScrollView>
         </SafeAreaView>
@@ -183,13 +198,11 @@ const styles = StyleSheet.create({
   cardSubtitle: { fontSize: 12, color: THEME.muted, marginTop: 2 },
   actions: { flexDirection: 'row' },
   actionBtn: { padding: 10 },
-  fab: { position: 'absolute', right: 20, bottom: 20, width: 60, height: 60, borderRadius: 30, backgroundColor: THEME.primary, justifyContent: 'center', alignItems: 'center', elevation: 5 },
-  fabText: { color: '#fff', fontSize: 30 },
+  fab: { position: 'absolute', right: 25, bottom: 25, width: 65, height: 65, borderRadius: 33, backgroundColor: THEME.primary, justifyContent: 'center', alignItems: 'center', elevation: 8, shadowColor: THEME.primary, shadowOpacity: 0.3, shadowRadius: 10 },
   modalContainer: { flex: 1, backgroundColor: '#fff' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 25, borderBottomWidth: 1, borderBottomColor: '#eee' },
   modalTitle: { fontSize: 18, fontWeight: 'bold', color: THEME.primary },
-  closeIcon: { fontSize: 22, color: THEME.muted },
-  label: { fontSize: 11, fontWeight: 'bold', color: THEME.muted, marginBottom: 8, letterSpacing: 1 },
+  label: { fontSize: 11, fontWeight: 'bold', color: THEME.muted, marginBottom: 8, marginTop: 15, letterSpacing: 1 },
   input: { backgroundColor: THEME.background, padding: 15, borderRadius: 12, marginBottom: 20, fontSize: 16, borderWidth: 1, borderColor: '#eee' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
   chip: { paddingHorizontal: 15, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: '#ddd', backgroundColor: '#fff' },
@@ -197,5 +210,6 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 13, fontWeight: '600', color: THEME.primary },
   whiteText: { color: '#fff' },
   saveBtn: { backgroundColor: THEME.primary, padding: 20, borderRadius: 12, marginTop: 20, alignItems: 'center' },
-  saveBtnText: { color: '#fff', fontWeight: 'bold' }
+  saveBtnText: { color: '#fff', fontWeight: 'bold', letterSpacing: 1 },
+  emptyText: { textAlign: 'center', marginTop: 50, color: THEME.muted }
 });

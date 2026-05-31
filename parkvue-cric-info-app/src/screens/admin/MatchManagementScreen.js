@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, Text, View, FlatList, TouchableOpacity, 
   ActivityIndicator, Modal, TextInput, Alert, SafeAreaView, ScrollView, StatusBar
 } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { AdminService } from '../../services/AdminService';
 
 const THEME = {
@@ -63,7 +64,7 @@ export default function MatchManagementScreen({ navigation }) {
       setAllTeams(t || []);
       setAllTournaments(tr || []);
     } catch (e) {
-      Alert.alert('Network Error', 'Could not sync with the server.');
+      Alert.alert('Error', 'Failed to fetch data.');
     } finally {
       setLoading(false);
     }
@@ -122,11 +123,11 @@ export default function MatchManagementScreen({ navigation }) {
 
   const handleSave = async () => {
     if (!tournamentId || !team1Id || !team2Id) {
-        Alert.alert("Missing Fields", "Tournament and both Teams are mandatory.");
+        Alert.alert("Required", "Please select Tournament and both Teams.");
         return;
     }
     if (team1Id === team2Id) {
-        Alert.alert("Invalid Matchup", "A team cannot play against itself.");
+        Alert.alert("Error", "Teams must be different.");
         return;
     }
 
@@ -147,14 +148,14 @@ export default function MatchManagementScreen({ navigation }) {
       setModalVisible(false);
       loadAll();
     } catch (e) {
-      Alert.alert('Error', 'Failed to save match data.');
+      Alert.alert('Error', 'Failed to save match.');
     }
   };
 
   const handleDelete = (id) => {
-    Alert.alert('Delete Fixture', 'This will erase all scoring history. Proceed?', [
+    Alert.alert('Delete', 'Delete this match?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete Permanently', style: 'destructive', onPress: async () => {
+      { text: 'Delete', style: 'destructive', onPress: async () => {
         try {
           await AdminService.deleteMatch(id);
           loadAll();
@@ -163,217 +164,120 @@ export default function MatchManagementScreen({ navigation }) {
     ]);
   };
 
-  const handleSquadPress = (match) => {
-    Alert.alert(
-      'Manage Squad',
-      'Select a team to edit their playing XI:',
-      [
-        { text: match.team1?.name || 'Home Team', onPress: () => navigation.navigate('ManageSquad', { matchId: match.id, teamId: match.team1?.id, teamName: match.team1?.name }) },
-        { text: match.team2?.name || 'Away Team', onPress: () => navigation.navigate('ManageSquad', { matchId: match.id, teamId: match.team2?.id, teamName: match.team2?.name }) },
-        { text: 'Cancel', style: 'cancel' }
-      ]
-    );
-  };
-
-  const StatusBadge = ({ status }) => {
-    const s = status?.toLowerCase();
-    const color = s === 'live' ? THEME.live : s === 'completed' ? THEME.completed : THEME.upcoming;
-    return (
-      <View style={[styles.badge, { backgroundColor: color }]}>
-        <Text style={styles.badgeText}>{status?.toUpperCase()}</Text>
-      </View>
-    );
-  };
-
-  const MatchCard = ({ item }) => {
-    return (
-      <View style={styles.premiumCard}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.venueText}>{item.venue || 'Venue TBA'}</Text>
-          <StatusBadge status={item.status} />
-        </View>
-        
-        <View style={styles.vsContainer}>
-            <View style={styles.teamColumn}>
-                <Text style={styles.teamAbbr}>{item.team1?.shortName || 'T1'}</Text>
-                <Text style={styles.teamFullName} numberOfLines={1}>{item.team1?.name}</Text>
-            </View>
-            <View style={styles.vsWrapper}>
-                <Text style={styles.vsText}>VS</Text>
-            </View>
-            <View style={[styles.teamColumn, { alignItems: 'flex-end' }]}>
-                <Text style={styles.teamAbbr}>{item.team2?.shortName || 'T2'}</Text>
-                <Text style={[styles.teamFullName, { textAlign: 'right' }]} numberOfLines={1}>{item.team2?.name}</Text>
-            </View>
-        </View>
-
-        <Text style={styles.tournamentLabel}>{item.tournament?.name || 'Unofficial Fixture'}</Text>
-
-        <View style={styles.cardFooter}>
-            <TouchableOpacity 
-                style={styles.actionPill} 
-                onPress={() => handleSquadPress(item)}
-            >
-                <Text style={styles.actionPillText}>MANAGE SQUAD</Text>
-            </TouchableOpacity>
-            <View style={styles.controlGroup}>
-                <TouchableOpacity onPress={() => openModal(item)} style={styles.circleBtn}>
-                    <Text style={styles.circleBtnText}>✎</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleDelete(item.id)} style={[styles.circleBtn, { backgroundColor: 'rgba(230, 57, 70, 0.1)' }]}>
-                    <Text style={[styles.circleBtnText, { color: THEME.danger }]}>🗑</Text>
-                </TouchableOpacity>
-            </View>
-        </View>
-      </View>
-    );
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.topHeader}>
-        <View>
-            <Text style={styles.headerTitle}>Match Schedules</Text>
-            <Text style={styles.headerSubtitle}>{matches.length} fixtures scheduled</Text>
-        </View>
-        <TouchableOpacity style={styles.syncBtn} onPress={loadAll}>
-            <Text style={styles.syncIcon}>🔄</Text>
+        <Text style={styles.headerTitle}>Match Schedules</Text>
+        <TouchableOpacity onPress={loadAll} style={styles.syncBtn}>
+            <Ionicons name="refresh-outline" size={22} color={THEME.primary} />
         </TouchableOpacity>
       </View>
 
-      {loading ? (
-        <ActivityIndicator size="large" color={THEME.primary} style={{ marginTop: 50 }} />
-      ) : (
+      {loading ? <ActivityIndicator size="large" color={THEME.primary} style={{marginTop: 50}} /> : (
         <FlatList 
           data={matches} 
-          renderItem={({ item }) => <MatchCard item={item} />} 
-          keyExtractor={item => item.id} 
-          contentContainerStyle={styles.listContainer}
+          keyExtractor={item => item.id}
+          contentContainerStyle={{ padding: 20 }}
+          renderItem={({item}) => (
+            <View style={styles.matchCard}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.venueTag}>{item.venue || 'TBA'}</Text>
+                <View style={[styles.badge, { backgroundColor: item.status === 'Live' ? THEME.live : THEME.upcoming }]}>
+                    <Text style={styles.badgeText}>{item.status?.toUpperCase()}</Text>
+                </View>
+              </View>
+              <Text style={styles.teamsText}>{item.team1?.shortName} VS {item.team2?.shortName}</Text>
+              <View style={styles.cardFooter}>
+                <TouchableOpacity onPress={() => openModal(item)} style={styles.iconBtn}>
+                    <Ionicons name="create-outline" size={18} color={THEME.secondary} />
+                    <Text style={[styles.iconLabel, {color: THEME.secondary}]}>Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.iconBtn}>
+                    <Ionicons name="trash-outline" size={18} color={THEME.danger} />
+                    <Text style={[styles.iconLabel, {color: THEME.danger}]}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-                <Text style={styles.emptyIcon}>📅</Text>
-                <Text style={styles.emptyText}>No matches scheduled.</Text>
+                <Ionicons name="calendar-outline" size={48} color="#ccc" />
+                <Text style={styles.emptyText}>No matches scheduled</Text>
             </View>
           }
         />
       )}
 
-      <TouchableOpacity style={styles.fab} onPress={() => openModal()} activeOpacity={0.9}>
-        <Text style={styles.fabText}>+</Text>
+      <TouchableOpacity style={styles.fab} onPress={() => openModal()}>
+        <Ionicons name="add-outline" size={32} color="#fff" />
       </TouchableOpacity>
 
-      {/* Main Creation Modal */}
       <Modal visible={modalVisible} animationType="slide" onRequestClose={() => setModalVisible(false)}>
-        <SafeAreaView style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-                <View>
-                    <Text style={styles.modalLabel}>{editingMatchId ? 'EDITING FIXTURE' : 'NEW FIXTURE'}</Text>
-                    <Text style={styles.modalTitle}>{editingMatchId ? 'Update Match' : 'Schedule New Match'}</Text>
-                </View>
-                <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeBtn}>
-                    <Text style={styles.closeText}>✕</Text>
+        <SafeAreaView style={styles.modalBg}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{editingMatchId ? 'Update Match' : 'Create New Match'}</Text>
+            <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <Ionicons name="close-outline" size={28} color={THEME.muted} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={{ padding: 25 }} keyboardShouldPersistTaps="always">
+            <Text style={styles.label}>TOURNAMENT</Text>
+            <TouchableOpacity style={styles.selectBtn} onPress={() => startSelection('tournament')}>
+                <Text style={[styles.selectText, !tournamentName && {color: '#999'}]}>{tournamentName || 'Select Tournament...'}</Text>
+                <Ionicons name="chevron-down" size={18} color={THEME.muted} />
+            </TouchableOpacity>
+
+            <Text style={styles.label}>TEAM 1 (HOME)</Text>
+            <TouchableOpacity style={styles.selectBtn} onPress={() => startSelection('team1')}>
+                <Text style={[styles.selectText, !team1Name && {color: '#999'}]}>{team1Name || 'Pick Team...'}</Text>
+                <Ionicons name="chevron-down" size={18} color={THEME.muted} />
+            </TouchableOpacity>
+
+            <Text style={styles.label}>TEAM 2 (AWAY)</Text>
+            <TouchableOpacity style={styles.selectBtn} onPress={() => startSelection('team2')}>
+                <Text style={[styles.selectText, !team2Name && {color: '#999'}]}>{team2Name || 'Pick Team...'}</Text>
+                <Ionicons name="chevron-down" size={18} color={THEME.muted} />
+            </TouchableOpacity>
+
+            <Text style={styles.label}>VENUE</Text>
+            <TextInput style={styles.input} value={venue} onChangeText={setVenue} placeholder="Enter Venue" />
+
+            <Text style={styles.label}>MATCH STATUS</Text>
+            <View style={styles.chipRow}>
+              {['Upcoming', 'Live', 'Completed'].map(s => (
+                <TouchableOpacity 
+                  key={s} 
+                  style={[styles.chip, status === s && styles.chipActive]} 
+                  onPress={() => setStatus(s)}
+                >
+                  <Text style={[styles.chipText, status === s && styles.whiteText]}>{s}</Text>
                 </TouchableOpacity>
+              ))}
             </View>
-            
-            <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="always" contentContainerStyle={{ padding: 25 }}>
-                <View style={styles.formSection}>
-                    <Text style={styles.sectionHeader}>LEAGUE & TEAMS</Text>
-                    
-                    <Text style={styles.inputLabel}>TOURNAMENT</Text>
-                    <TouchableOpacity 
-                        style={styles.modernSelect} 
-                        onPress={() => startSelection('tournament')}
-                    >
-                        <Text style={[styles.selectText, !tournamentName && {color: '#999'}]}>
-                            {tournamentName || 'Pick a Tournament'}
-                        </Text>
-                        <Text style={styles.selectArrow}>▾</Text>
+
+            <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
+                <Text style={styles.saveBtnText}>SAVE MATCH FIXTURE</Text>
+            </TouchableOpacity>
+          </ScrollView>
+
+          {selectorVisible && (
+            <View style={styles.overlay}>
+                <View style={styles.overlayHeader}>
+                    <Text style={styles.overlayTitle}>{selectorTitle}</Text>
+                    <TouchableOpacity onPress={() => setSelectorVisible(false)}>
+                        <Ionicons name="close-circle-outline" size={24} color={THEME.danger} />
                     </TouchableOpacity>
-
-                    <View style={styles.formRow}>
-                        <View style={{flex: 1}}>
-                            <Text style={styles.inputLabel}>HOME TEAM</Text>
-                            <TouchableOpacity 
-                                style={styles.modernSelect} 
-                                onPress={() => startSelection('team1')}
-                            >
-                                <Text style={[styles.selectText, !team1Name && {color: '#999'}]} numberOfLines={1}>
-                                    {team1Name || 'Select'}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                        <View style={styles.vsDivider}><Text style={styles.vsDividerText}>vs</Text></View>
-                        <View style={{flex: 1}}>
-                            <Text style={styles.inputLabel}>AWAY TEAM</Text>
-                            <TouchableOpacity 
-                                style={styles.modernSelect} 
-                                onPress={() => startSelection('team2')}
-                            >
-                                <Text style={[styles.selectText, !team2Name && {color: '#999'}]} numberOfLines={1}>
-                                    {team2Name || 'Select'}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
                 </View>
-
-                <View style={styles.formSection}>
-                    <Text style={styles.sectionHeader}>LOGISTICS & STATUS</Text>
-                    
-                    <Text style={styles.inputLabel}>VENUE / GROUND</Text>
-                    <TextInput 
-                        style={styles.modernInput} 
-                        value={venue} 
-                        onChangeText={setVenue} 
-                        placeholder="e.g. Central Park Oval" 
-                        placeholderTextColor="#999"
-                    />
-
-                    <Text style={styles.inputLabel}>MATCH STATUS</Text>
-                    <View style={styles.chipRow}>
-                      {['Upcoming', 'Live', 'Completed'].map(s => (
-                        <TouchableOpacity 
-                          key={s} 
-                          style={[styles.statusChip, status === s && styles.statusChipActive]} 
-                          onPress={() => setStatus(s)}
-                        >
-                          <Text style={[styles.statusChipText, status === s && {color: '#fff'}]}>{s}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                </View>
-
-                <TouchableOpacity style={styles.confirmBtn} onPress={handleSave} activeOpacity={0.8}>
-                    <Text style={styles.confirmBtnText}>{editingMatchId ? 'UPDATE FIXTURE' : 'CONFIRM SCHEDULE'}</Text>
-                </TouchableOpacity>
-                <View style={{ height: 100 }} />
-            </ScrollView>
-
-            {/* SELECTION OVERLAY (INSTANT UI UPDATE) */}
-            {selectorVisible && (
-                <View style={styles.selectorOverlay}>
-                    <View style={styles.overlayHeader}>
-                        <Text style={styles.overlayTitle}>{selectorTitle}</Text>
-                        <TouchableOpacity onPress={() => setSelectorVisible(false)} style={styles.overlayClose}>
-                            <Text style={styles.overlayCloseText}>Cancel</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <FlatList 
-                        data={selectorOptions} 
-                        keyExtractor={item => item.id} 
-                        renderItem={({item}) => (
-                            <TouchableOpacity style={styles.optionRow} onPress={() => handleSelect(item)}>
-                                <View>
-                                    <Text style={styles.optionMain}>{item.name}</Text>
-                                    <Text style={styles.optionSub}>{item.shortName || 'Registry'}</Text>
-                                </View>
-                                <Text style={styles.optionArrow}>→</Text>
-                            </TouchableOpacity>
-                        )} 
-                    />
-                </View>
-            )}
+                <FlatList data={selectorOptions} keyExtractor={item => item.id} renderItem={({item}) => (
+                    <TouchableOpacity style={styles.option} onPress={() => handleSelect(item)}>
+                        <Text style={styles.optionText}>{item.name}</Text>
+                        <Ionicons name="arrow-forward-outline" size={18} color={THEME.secondary} />
+                    </TouchableOpacity>
+                )} />
+            </View>
+          )}
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
@@ -382,79 +286,39 @@ export default function MatchManagementScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: THEME.background },
-  topHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 25, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: THEME.border },
-  headerTitle: { fontSize: 24, fontWeight: '900', color: THEME.primary, letterSpacing: -0.5 },
-  headerSubtitle: { fontSize: 13, color: THEME.muted, marginTop: 4, fontWeight: '600' },
-  syncBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: THEME.background, justifyContent: 'center', alignItems: 'center' },
-  syncIcon: { fontSize: 18 },
-  listContainer: { padding: 20 },
-  
-  premiumCard: { 
-    backgroundColor: THEME.card, 
-    borderRadius: 25, 
-    padding: 20, 
-    marginBottom: 20, 
-    elevation: 4, 
-    shadowColor: '#000', 
-    shadowOpacity: 0.08, 
-    shadowRadius: 15,
-    shadowOffset: { width: 0, height: 5 }
-  },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  venueText: { fontSize: 11, fontWeight: '800', color: THEME.muted, letterSpacing: 0.8, textTransform: 'uppercase' },
-  badge: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 10 },
-  badgeText: { color: '#fff', fontSize: 10, fontWeight: '900' },
-  vsContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#f8f8f8', marginBottom: 15 },
-  teamColumn: { flex: 1 },
-  teamAbbr: { fontSize: 22, fontWeight: '900', color: THEME.primary, letterSpacing: -1 },
-  teamFullName: { fontSize: 12, color: THEME.muted, marginTop: 4, fontWeight: '500' },
-  vsWrapper: { width: 36, height: 36, borderRadius: 18, backgroundColor: THEME.background, justifyContent: 'center', alignItems: 'center', marginHorizontal: 10 },
-  vsText: { fontSize: 10, fontWeight: '900', color: THEME.secondary },
-  tournamentLabel: { fontSize: 12, color: THEME.muted, fontStyle: 'italic', marginBottom: 20 },
-  cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  actionPill: { backgroundColor: 'rgba(25, 167, 206, 0.12)', paddingHorizontal: 18, paddingVertical: 12, borderRadius: 15, borderWidth: 1, borderColor: THEME.secondary },
-  actionPillText: { color: THEME.secondary, fontSize: 11, fontWeight: '900', letterSpacing: 1 },
-  controlGroup: { flexDirection: 'row', gap: 10 },
-  circleBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: THEME.background, justifyContent: 'center', alignItems: 'center' },
-  circleBtnText: { fontSize: 18 },
-  
-  fab: { position: 'absolute', right: 25, bottom: 25, width: 65, height: 65, borderRadius: 33, backgroundColor: THEME.primary, justifyContent: 'center', alignItems: 'center', elevation: 10, shadowColor: THEME.primary, shadowOpacity: 0.4, shadowRadius: 15 },
-  fabText: { color: '#fff', fontSize: 35, fontWeight: '200' },
-  
-  emptyContainer: { alignItems: 'center', marginTop: 80 },
-  emptyIcon: { fontSize: 50, marginBottom: 15, opacity: 0.3 },
-  emptyText: { color: THEME.muted, fontSize: 16, fontWeight: '600' },
-
-  modalContent: { flex: 1, backgroundColor: '#fff' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 25, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
-  modalLabel: { fontSize: 10, fontWeight: '900', color: THEME.secondary, letterSpacing: 2, marginBottom: 4 },
-  modalTitle: { fontSize: 24, fontWeight: '900', color: THEME.primary, letterSpacing: -0.5 },
-  closeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: THEME.background, justifyContent: 'center', alignItems: 'center' },
-  closeText: { fontSize: 16, color: THEME.muted },
-  formSection: { marginBottom: 35 },
-  sectionHeader: { fontSize: 12, fontWeight: 'bold', color: THEME.primary, marginBottom: 20, letterSpacing: 1.5, opacity: 0.8 },
-  inputLabel: { fontSize: 10, fontWeight: '800', color: THEME.muted, marginBottom: 10, letterSpacing: 0.5 },
-  modernInput: { backgroundColor: THEME.background, padding: 20, borderRadius: 18, fontSize: 16, color: THEME.primary, fontWeight: '600', borderWidth: 1, borderColor: '#eee' },
-  modernSelect: { backgroundColor: THEME.background, padding: 20, borderRadius: 18, marginBottom: 20, borderWidth: 1, borderColor: '#eee', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  selectText: { fontSize: 15, fontWeight: '700', color: THEME.primary },
-  selectArrow: { color: THEME.muted, fontSize: 18 },
-  formRow: { flexDirection: 'row', alignItems: 'center' },
-  vsDivider: { width: 40, alignItems: 'center', paddingTop: 30 },
-  vsDividerText: { fontSize: 12, fontWeight: '900', color: THEME.secondary, opacity: 0.5 },
-  chipRow: { flexDirection: 'row', gap: 10, marginTop: 5 },
-  statusChip: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 15, backgroundColor: THEME.background, borderWidth: 1, borderColor: '#eee' },
-  statusChipActive: { backgroundColor: THEME.primary, borderColor: THEME.primary },
-  statusChipText: { fontSize: 13, fontWeight: 'bold', color: THEME.primary },
-  confirmBtn: { backgroundColor: THEME.primary, padding: 22, borderRadius: 20, alignItems: 'center', shadowColor: THEME.primary, shadowOpacity: 0.3, shadowRadius: 20, elevation: 8 },
-  confirmBtnText: { color: '#fff', fontWeight: '900', letterSpacing: 1.5, fontSize: 14 },
-
-  selectorOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: '#fff', zIndex: 2000 },
-  overlayHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 25, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
-  overlayTitle: { fontSize: 20, fontWeight: '900', color: THEME.primary },
-  overlayClose: { padding: 10 },
-  overlayCloseText: { color: THEME.danger, fontWeight: 'bold' },
-  optionRow: { padding: 25, borderBottomWidth: 1, borderBottomColor: '#f9f9f8', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  optionMain: { fontSize: 17, fontWeight: '800', color: THEME.primary },
-  optionSub: { fontSize: 11, color: THEME.muted, fontWeight: 'bold', marginTop: 4, textTransform: 'uppercase' },
-  optionArrow: { color: THEME.secondary, fontSize: 20, fontWeight: 'bold' }
+  topHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 25, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee' },
+  headerTitle: { fontSize: 22, fontWeight: 'bold', color: THEME.primary },
+  syncBtn: { padding: 5 },
+  matchCard: { backgroundColor: '#fff', borderRadius: 20, padding: 20, marginBottom: 15, elevation: 3 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  venueTag: { fontSize: 10, color: THEME.muted, fontWeight: 'bold', textTransform: 'uppercase' },
+  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  badgeText: { color: '#fff', fontSize: 9, fontWeight: 'bold' },
+  teamsText: { fontSize: 22, fontWeight: '900', marginVertical: 12, color: THEME.primary, letterSpacing: -0.5 },
+  cardFooter: { flexDirection: 'row', justifyContent: 'flex-end', gap: 15, marginTop: 5 },
+  iconBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: THEME.background, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 },
+  iconLabel: { fontSize: 12, fontWeight: 'bold', marginLeft: 6 },
+  emptyContainer: { alignItems: 'center', marginTop: 100 },
+  emptyText: { marginTop: 15, color: THEME.muted, fontWeight: '600' },
+  fab: { position: 'absolute', right: 25, bottom: 25, width: 65, height: 65, borderRadius: 33, backgroundColor: THEME.primary, justifyContent: 'center', alignItems: 'center', elevation: 8, shadowColor: THEME.primary, shadowOpacity: 0.3, shadowRadius: 10 },
+  fabText: { color: '#fff', fontSize: 30 },
+  modalBg: { flex: 1, backgroundColor: '#fff' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 25, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', color: THEME.primary },
+  label: { fontSize: 11, fontWeight: 'bold', color: THEME.muted, marginBottom: 8, marginTop: 20, letterSpacing: 1 },
+  input: { backgroundColor: THEME.background, padding: 18, borderRadius: 15, fontSize: 16, borderWidth: 1, borderColor: '#eee' },
+  selectBtn: { backgroundColor: THEME.background, padding: 18, borderRadius: 15, borderWidth: 1, borderColor: '#eee', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  selectText: { fontSize: 16, fontWeight: '600', color: THEME.primary },
+  chipRow: { flexDirection: 'row', gap: 8, marginTop: 5 },
+  chip: { paddingHorizontal: 15, paddingVertical: 10, borderRadius: 10, backgroundColor: THEME.background, borderWidth: 1, borderColor: '#eee' },
+  chipActive: { backgroundColor: THEME.primary, borderColor: THEME.primary },
+  chipText: { fontSize: 13, fontWeight: 'bold', color: THEME.primary },
+  whiteText: { color: '#fff' },
+  saveBtn: { backgroundColor: THEME.primary, padding: 20, borderRadius: 15, marginTop: 40, alignItems: 'center', elevation: 5 },
+  saveBtnText: { color: '#fff', fontWeight: 'bold', letterSpacing: 1 },
+  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: '#fff', zIndex: 1000, paddingTop: 20 },
+  overlayHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 25, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  overlayTitle: { fontSize: 18, fontWeight: 'bold' },
+  option: { padding: 25, borderBottomWidth: 1, borderBottomColor: '#f5f5f5', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  optionText: { fontSize: 16, fontWeight: 'bold', color: THEME.primary }
 });

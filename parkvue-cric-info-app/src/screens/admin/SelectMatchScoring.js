@@ -3,6 +3,7 @@ import {
   StyleSheet, Text, View, FlatList, TouchableOpacity, 
   ActivityIndicator, SafeAreaView 
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { fetchAllMatches } from '../../services/MatchService';
 
 const THEME = {
@@ -21,7 +22,7 @@ export default function SelectMatchScoring({ navigation }) {
   useEffect(() => {
     const loadMatches = async () => {
       const data = await fetchAllMatches();
-      setMatches(data);
+      setMatches(data || []);
       setLoading(false);
     };
     loadMatches();
@@ -45,6 +46,7 @@ export default function SelectMatchScoring({ navigation }) {
         renderItem={({ item }) => (
           <TouchableOpacity 
             style={styles.matchCard}
+            activeOpacity={0.8}
             onPress={() => navigation.navigate('LiveScoring', { 
                 matchId: item.id, 
                 matchName: `${item.team1?.shortName || 'T1'} vs ${item.team2?.shortName || 'T2'}` 
@@ -54,11 +56,12 @@ export default function SelectMatchScoring({ navigation }) {
               <Text style={styles.matchName}>
                 {item.team1?.name} <Text style={{ color: THEME.secondary }}>vs</Text> {item.team2?.name}
               </Text>
-              <Text style={styles.matchStatus}>{item.status} • {item.venue}</Text>
+              <Text style={styles.matchStatus}>{item.status} • {item.venue || 'Venue TBA'}</Text>
             </View>
-            <Text style={styles.chevron}>🏏</Text>
+            <MaterialCommunityIcons name="cricket" size={28} color={THEME.secondary} />
           </TouchableOpacity>
         )}
+        ListEmptyComponent={<Text style={styles.empty}>No matches available to score.</Text>}
       />
     </SafeAreaView>
   );
@@ -67,22 +70,22 @@ export default function SelectMatchScoring({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: THEME.background },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { fontSize: 18, fontWeight: 'bold', padding: 20, color: THEME.primary },
+  header: { fontSize: 18, fontWeight: 'bold', padding: 20, color: THEME.primary, letterSpacing: 1 },
   matchCard: { 
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: THEME.card, 
-    padding: 20, 
-    borderRadius: 16, 
+    padding: 22, 
+    borderRadius: 20, 
     marginBottom: 12,
-    elevation: 2,
+    elevation: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 5
+    shadowRadius: 10
   },
   cardInfo: { flex: 1 },
-  matchName: { fontSize: 15, fontWeight: 'bold', color: THEME.primary },
-  matchStatus: { fontSize: 12, color: THEME.muted, marginTop: 4 },
-  chevron: { fontSize: 20 }
+  matchName: { fontSize: 16, fontWeight: '900', color: THEME.primary },
+  matchStatus: { fontSize: 12, color: THEME.muted, marginTop: 4, fontWeight: '600' },
+  empty: { textAlign: 'center', marginTop: 50, color: THEME.muted }
 });

@@ -3,6 +3,7 @@ import {
   StyleSheet, Text, View, ActivityIndicator, 
   FlatList, SafeAreaView, StatusBar, TouchableOpacity 
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { fetchMatchSummary } from '../services/MatchService';
 
 const THEME = {
@@ -30,7 +31,7 @@ export default function MatchCenter({ route, navigation }) {
 
   useEffect(() => {
     loadSummary();
-    const interval = setInterval(loadSummary, 5000); // Faster refresh for Match Center
+    const interval = setInterval(loadSummary, 5000); 
     return () => clearInterval(interval);
   }, [matchId]);
 
@@ -83,16 +84,17 @@ export default function MatchCenter({ route, navigation }) {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       
-      {/* Jumbotron Scoreboard */}
       <View style={styles.jumbotron}>
         <View style={styles.jumboHeader}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backArrow}>←</Text>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtnIcon}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.jumboMatchName}>
-            {summary.match?.team1?.shortName} vs {summary.match?.team2?.shortName}
+            {summary.match?.team1?.shortName} <Text style={{color: THEME.secondary}}>VS</Text> {summary.match?.team2?.shortName}
           </Text>
-          <View style={{ width: 24 }} />
+          <TouchableOpacity onPress={loadSummary}>
+            <Ionicons name="refresh-outline" size={22} color="rgba(255,255,255,0.6)" />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.scoreRow}>
@@ -117,7 +119,7 @@ export default function MatchCenter({ route, navigation }) {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Live Commentary</Text>
           <View style={styles.liveIndicator}>
-            <View style={styles.pulseDot} />
+            <Ionicons name="radio-outline" size={14} color={THEME.live} style={{marginRight: 4}} />
             <Text style={styles.liveText}>LIVE</Text>
           </View>
         </View>
@@ -129,6 +131,7 @@ export default function MatchCenter({ route, navigation }) {
           renderItem={({ item }) => <DeliveryItem item={item} />}
           ListEmptyComponent={
             <View style={styles.emptyCommentary}>
+              <Ionicons name="chatbox-ellipses-outline" size={40} color="#ccc" />
               <Text style={styles.emptyText}>Waiting for the first ball...</Text>
             </View>
           }
@@ -152,8 +155,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 15
   },
-  backArrow: { color: '#FFF', fontSize: 24, fontWeight: 'bold' },
-  jumboMatchName: { color: 'rgba(255,255,255,0.7)', fontWeight: 'bold', fontSize: 14, textTransform: 'uppercase' },
+  backBtnIcon: { padding: 5 },
+  jumboMatchName: { color: '#fff', fontWeight: '900', fontSize: 14, textTransform: 'uppercase', letterSpacing: 1 },
   scoreRow: { 
     flexDirection: 'row', 
     alignItems: 'flex-end', 
@@ -198,9 +201,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12
   },
-  pulseDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: THEME.live, marginRight: 6 },
   liveText: { color: THEME.live, fontSize: 10, fontWeight: '900' },
-  commentaryList: { paddingHorizontal: 20 },
+  commentaryList: { paddingHorizontal: 20, paddingBottom: 30 },
   deliveryCard: { 
     backgroundColor: THEME.white, 
     borderRadius: 12, 
@@ -226,12 +228,12 @@ const styles = StyleSheet.create({
   wicketBall: { backgroundColor: THEME.live },
   boundaryBall: { backgroundColor: THEME.secondary },
   ballText: { fontWeight: 'bold', color: THEME.primary },
-  whiteText: { color: '#FFF' },
+  whiteText: { color: '#fff' },
   deliveryInfo: { flex: 1 },
   overBallText: { fontSize: 12, fontWeight: 'bold', color: THEME.muted, marginBottom: 2 },
   commentaryText: { fontSize: 14, color: THEME.text, lineHeight: 20 },
   emptyCommentary: { alignItems: 'center', marginTop: 50 },
-  emptyText: { color: THEME.muted },
+  emptyText: { color: THEME.muted, marginTop: 10, fontWeight: '500' },
   errorText: { marginBottom: 20, color: THEME.muted },
   backBtn: { backgroundColor: THEME.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
   backBtnText: { color: '#FFF', fontWeight: 'bold' }

@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, StatusBar } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, StatusBar, Alert } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 const THEME = {
   primary: '#0B2447',
@@ -12,14 +13,18 @@ const THEME = {
 };
 
 export default function AdminDashboard({ navigation }) {
-  const GridButton = ({ title, icon, color, onPress }) => (
+  const GridButton = ({ title, icon, color, onPress, isIonic = true }) => (
     <TouchableOpacity 
       style={[styles.gridBtn, { borderTopWidth: 4, borderTopColor: color }]} 
       onPress={onPress} 
       activeOpacity={0.8}
     >
-      <View style={styles.gridIconContainer}>
-        <Text style={styles.gridIcon}>{icon}</Text>
+      <View style={[styles.gridIconContainer, { backgroundColor: `${color}10` }]}>
+        {isIonic ? (
+            <Ionicons name={icon} size={24} color={color} />
+        ) : (
+            <MaterialCommunityIcons name={icon} size={24} color={color} />
+        )}
       </View>
       <Text style={styles.gridTitle}>{title}</Text>
     </TouchableOpacity>
@@ -39,25 +44,25 @@ export default function AdminDashboard({ navigation }) {
           <View style={styles.grid}>
             <GridButton 
               title="Tournaments" 
-              icon="🏆" 
+              icon="trophy-outline" 
               color={THEME.primary}
               onPress={() => navigation.navigate('ManageEntity', { entityType: 'tournaments' })}
             />
             <GridButton 
               title="Teams" 
-              icon="🛡️" 
+              icon="shield-half-outline" 
               color={THEME.secondary}
               onPress={() => navigation.navigate('ManageEntity', { entityType: 'teams' })}
             />
             <GridButton 
               title="Players" 
-              icon="👤" 
+              icon="person-outline" 
               color="#2A9D8F"
               onPress={() => navigation.navigate('ManageEntity', { entityType: 'players' })}
             />
             <GridButton 
               title="Venues" 
-              icon="📍" 
+              icon="location-outline" 
               color="#ECA154"
               onPress={() => Alert.alert("Coming Soon")}
             />
@@ -72,7 +77,9 @@ export default function AdminDashboard({ navigation }) {
             onPress={() => navigation.navigate('MatchManagement')}
           >
             <View style={styles.heroContent}>
-              <Text style={styles.heroIcon}>📅</Text>
+              <View style={styles.heroIconWrapper}>
+                <Ionicons name="calendar-outline" size={26} color="#fff" />
+              </View>
               <View>
                 <Text style={styles.heroTitle}>Match Schedules</Text>
                 <Text style={styles.heroSubtitle}>Initialize fixtures & Manage Squads</Text>
@@ -86,7 +93,9 @@ export default function AdminDashboard({ navigation }) {
             onPress={() => navigation.navigate('SelectMatchScoring')}
           >
             <View style={styles.heroContent}>
-              <Text style={[styles.heroIcon, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>🏏</Text>
+              <View style={[styles.heroIconWrapper, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                <MaterialCommunityIcons name="cricket" size={26} color="#fff" />
+              </View>
               <View>
                 <Text style={[styles.heroTitle, { color: '#fff' }]}>Enter Match Scoring</Text>
                 <Text style={[styles.heroSubtitle, { color: 'rgba(255,255,255,0.8)' }]}>Start live ball-by-ball entry</Text>
@@ -125,12 +134,10 @@ const styles = StyleSheet.create({
     width: 50, 
     height: 50, 
     borderRadius: 15, 
-    backgroundColor: THEME.background, 
     justifyContent: 'center', 
     alignItems: 'center',
     marginBottom: 12
   },
-  gridIcon: { fontSize: 24 },
   gridTitle: { fontSize: 14, fontWeight: '700', color: THEME.primary },
   heroBtn: { 
     backgroundColor: THEME.primary, 
@@ -143,8 +150,7 @@ const styles = StyleSheet.create({
     elevation: 5
   },
   heroContent: { flexDirection: 'row', alignItems: 'center' },
-  heroIcon: { 
-    fontSize: 26, 
+  heroIconWrapper: { 
     backgroundColor: 'rgba(255,255,255,0.1)', 
     padding: 12, 
     borderRadius: 15, 
