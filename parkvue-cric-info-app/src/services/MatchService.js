@@ -1,4 +1,4 @@
-const BASE_URL = 'http://192.168.4.77:8080/api'; // Computer's local IP for physical device access
+const BASE_URL = 'https://short-vans-like.loca.lt/api'; // Public tunnel URL for external access
 
 export const fetchAllMatches = async () => {
   try {

@@ -1,4 +1,4 @@
-const BASE_URL = 'http://192.168.4.77:8080/api/scorer';
+const BASE_URL = 'https://short-vans-like.loca.lt/api/scorer';
 
 const fetchWrapper = async (url, options = {}) => {
   try {
