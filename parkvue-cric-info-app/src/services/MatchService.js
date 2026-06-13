@@ -84,3 +84,16 @@ export const submitDelivery = async (deliveryData) => {
     throw error;
   }
 };
+
+export const undoLastBall = async (inningsId) => {
+  try {
+    const response = await fetch(`${BASE_URL}/scorer/innings/${inningsId}/undo`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to undo ball');
+    return true;
+  } catch (error) {
+    console.error('Error undoing ball:', error);
+    throw error;
+  }
+};

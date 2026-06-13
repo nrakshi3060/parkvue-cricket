@@ -202,17 +202,42 @@ public class ScorerService {
         inningsRepository.save(innings);
         Delivery saved = deliveryRepository.save(delivery);
 
-        // TRIGGER ASYNC BROADCAST
         triggerUpdate(innings.getMatch().getId());
-
         return saved;
     }
 
+    @Transactional
+    public void undoLastBall(UUID inningsId) {
+        List<Delivery> deliveries = deliveryRepository.findRecentByInningsId(inningsId);
+        if (deliveries.isEmpty()) return;
+
+        Delivery lastBall = deliveries.get(0);
+        Innings innings = lastBall.getInnings();
+
+        // 1. Revert Score
+        int runsToRemove = lastBall.getRunsBatter() + (lastBall.getExtrasRuns() != null ? lastBall.getExtrasRuns() : 0);
+        innings.setTotalRuns(Math.max(0, innings.getTotalRuns() - runsToRemove));
+
+        // 2. Revert Wickets
+        if (lastBall.isWicket()) {
+            innings.setTotalWickets(Math.max(0, innings.getTotalWickets() - 1));
+        }
+
+        // 3. Revert Overs (if legal ball)
+        String extraType = lastBall.getExtrasType();
+        if (!"Wide".equalsIgnoreCase(extraType) && !"No-Ball".equalsIgnoreCase(extraType)) {
+            innings.setTotalOvers(decrementOvers(innings.getTotalOvers()));
+        }
+
+        // 4. Delete and Save
+        deliveryRepository.delete(lastBall);
+        inningsRepository.save(innings);
+
+        triggerUpdate(innings.getMatch().getId());
+    }
+
     private void triggerUpdate(UUID matchId) {
-        // Evict cache so the next 'getMatchSummary' call gets fresh data
         cacheService.evictMatchSummary(matchId.toString());
-        
-        // Construct the summary and broadcast via SSE
         MatchSummaryDTO summary = new MatchSummaryDTO();
         summary.setMatch(getMatchById(matchId));
         List<Innings> allInnings = getInningsByMatchId(matchId);
@@ -221,11 +246,7 @@ public class ScorerService {
             Innings latest = allInnings.stream().max((i1, i2) -> i1.getInningsNumber().compareTo(i2.getInningsNumber())).get();
             summary.setRecentDeliveries(getDeliveriesByInningsId(latest.getId()));
         }
-        
-        // Cache the new summary immediately
         cacheService.cacheMatchSummary(matchId.toString(), summary);
-        
-        // Push to SSE clients
         broadcastingService.broadcast(matchId.toString(), summary);
     }
 
@@ -237,6 +258,20 @@ public class ScorerService {
         if (balls >= 6) {
             fullOvers++;
             balls = 0;
+        }
+        return new BigDecimal(fullOvers + (balls / 10.0)).setScale(1, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal decrementOvers(BigDecimal currentOvers) {
+        if (currentOvers == null || currentOvers.equals(BigDecimal.ZERO)) return BigDecimal.ZERO;
+        int fullOvers = currentOvers.intValue();
+        int balls = currentOvers.remainder(BigDecimal.ONE).movePointRight(1).intValue();
+
+        if (balls == 0) {
+            fullOvers = Math.max(0, fullOvers - 1);
+            balls = 5;
+        } else {
+            balls--;
         }
         return new BigDecimal(fullOvers + (balls / 10.0)).setScale(1, RoundingMode.HALF_UP);
     }

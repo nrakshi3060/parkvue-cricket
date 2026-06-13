@@ -92,6 +92,10 @@ public class ScorerController {
     // --- Delivery Endpoints ---
     @PostMapping("/deliveries")
     public Delivery submitDelivery(@RequestBody Delivery delivery) { return scorerService.submitDelivery(delivery); }
+    
+    @DeleteMapping("/innings/{inningsId}/undo")
+    public void undoLastBall(@PathVariable UUID inningsId) { scorerService.undoLastBall(inningsId); }
+
     @GetMapping("/innings/{inningsId}/deliveries")
     public List<Delivery> getDeliveriesByInningsId(@PathVariable UUID inningsId) { return scorerService.getDeliveriesByInningsId(inningsId); }
 }

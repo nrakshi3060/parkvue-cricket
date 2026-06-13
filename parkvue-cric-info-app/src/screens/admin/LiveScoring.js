@@ -4,7 +4,7 @@ import {
   Alert, ScrollView, ActivityIndicator, SafeAreaView, StatusBar, FlatList, Modal
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { submitDelivery, fetchInningsByMatchId, createInnings, fetchMatchDetails, fetchMatchSummary } from '../../services/MatchService';
+import { submitDelivery, fetchInningsByMatchId, createInnings, fetchMatchDetails, fetchMatchSummary, undoLastBall } from '../../services/MatchService';
 import { AdminService } from '../../services/AdminService';
 
 const THEME = {
@@ -59,9 +59,7 @@ export default function LiveScoring({ route, navigation }) {
     try {
       const matchData = await fetchMatchDetails(matchId);
       setMatch(matchData);
-
       await refreshInningsData(matchData);
-
     } catch (error) {
       console.error("Setup Error", error);
       Alert.alert("Setup Error", "Failed to initialize scoring engine.");
@@ -78,7 +76,6 @@ export default function LiveScoring({ route, navigation }) {
           if (allInnings && allInnings.length > 0) {
             activeInnings = allInnings.sort((a, b) => b.inningsNumber - a.inningsNumber)[0];
           } else if (matchContext) {
-            // Create first innings if none exist
             try {
                 activeInnings = await createInnings({
                   match: { id: matchId },
@@ -87,8 +84,6 @@ export default function LiveScoring({ route, navigation }) {
                   inningsNumber: 1
                 });
             } catch (err) {
-                // If 409 happens here, it means someone else created it or refresh lag.
-                // Fetch again to be sure.
                 const retryInnings = await fetchInningsByMatchId(matchId);
                 activeInnings = retryInnings.sort((a, b) => b.inningsNumber - a.inningsNumber)[0];
             }
@@ -209,6 +204,22 @@ export default function LiveScoring({ route, navigation }) {
     }
   };
 
+  const handleUndo = async () => {
+    if (!innings) return;
+    Alert.alert('Undo Ball', 'Revert the last recorded delivery?', [
+        { text: 'No', style: 'cancel' },
+        { text: 'Yes, Undo', style: 'destructive', onPress: async () => {
+            try {
+                await undoLastBall(innings.id);
+                await refreshInningsData();
+                Alert.alert('Success', 'Last ball reverted.');
+            } catch (e) {
+                Alert.alert('Error', 'Failed to undo ball.');
+            }
+        }}
+    ]);
+  };
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -230,9 +241,14 @@ export default function LiveScoring({ route, navigation }) {
             <Text style={styles.matchLabel}>{matchName}</Text>
             <Text style={styles.inningsLabel}>INNINGS {innings?.inningsNumber}</Text>
         </View>
-        <TouchableOpacity onPress={startNewInnings} style={styles.endInningsBtn}>
-            <Text style={styles.endInningsText}>END</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+            <TouchableOpacity onPress={handleUndo} style={styles.undoBtn}>
+                <Ionicons name="arrow-undo-outline" size={18} color={THEME.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={startNewInnings} style={styles.endInningsBtn}>
+                <Text style={styles.endInningsText}>END</Text>
+            </TouchableOpacity>
+        </View>
       </View>
 
       <TouchableOpacity 
@@ -347,7 +363,8 @@ const styles = StyleSheet.create({
   headerInfo: { flex: 1, alignItems: 'center' },
   matchLabel: { fontSize: 13, color: THEME.muted, fontWeight: 'bold' },
   inningsLabel: { fontSize: 11, color: THEME.secondary, fontWeight: '900', marginTop: 2 },
-  endInningsBtn: { backgroundColor: 'rgba(230, 57, 70, 0.1)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  undoBtn: { backgroundColor: THEME.background, width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
+  endInningsBtn: { backgroundColor: 'rgba(230, 57, 70, 0.1)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, justifyContent: 'center' },
   endInningsText: { color: THEME.danger, fontSize: 10, fontWeight: 'bold' },
   scoreStrip: { backgroundColor: THEME.primary, paddingHorizontal: 25, paddingVertical: 18, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomLeftRadius: 20, borderBottomRightRadius: 20, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 5 },
   scoreSummary: { flexDirection: 'row', alignItems: 'flex-end' },
