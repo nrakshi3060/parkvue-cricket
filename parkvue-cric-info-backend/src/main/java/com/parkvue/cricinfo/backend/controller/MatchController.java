@@ -1,11 +1,13 @@
 package com.parkvue.cricinfo.backend.controller;
 
 import com.parkvue.cricinfo.backend.dto.MatchSummaryDTO;
+import com.parkvue.cricinfo.backend.dto.ScorecardDTO;
 import com.parkvue.cricinfo.backend.model.Innings;
 import com.parkvue.cricinfo.backend.model.Match;
 import com.parkvue.cricinfo.backend.service.ScorerService;
 import com.parkvue.cricinfo.backend.service.CacheService;
 import com.parkvue.cricinfo.backend.service.BroadcastingService;
+import com.parkvue.cricinfo.backend.service.AnalyticsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -25,6 +27,9 @@ public class MatchController {
 
     @Autowired
     private BroadcastingService broadcastingService;
+
+    @Autowired
+    private AnalyticsService analyticsService;
 
     @GetMapping
     public List<Match> getAllMatches() {
