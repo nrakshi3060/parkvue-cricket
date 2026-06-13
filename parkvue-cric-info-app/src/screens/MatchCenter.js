@@ -23,19 +23,28 @@ export default function MatchCenter({ route, navigation }) {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // We will use standard Fetch for initial load, 
+  // and then Polling as a fallback, but REDIS makes the poll near-instant.
   const loadSummary = async () => {
-    const data = await fetchMatchSummary(matchId);
-    setSummary(data);
-    setLoading(false);
+    try {
+      const data = await fetchMatchSummary(matchId);
+      if (data) setSummary(data);
+    } catch (e) {
+      console.error("Poll error", e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     loadSummary();
-    const interval = setInterval(loadSummary, 5000); 
+    // High-frequency polling enabled by Redis (every 3 seconds)
+    // This is much more reliable than SSE over unstable tunnels
+    const interval = setInterval(loadSummary, 3000); 
     return () => clearInterval(interval);
   }, [matchId]);
 
-  if (loading) {
+  if (loading && !summary) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={THEME.secondary} />
@@ -54,7 +63,7 @@ export default function MatchCenter({ route, navigation }) {
     );
   }
 
-  const currentInnings = summary.innings?.[0] || {};
+  const currentInnings = summary.innings?.sort((a,b) => b.inningsNumber - a.inningsNumber)[0] || {};
   const crr = currentInnings.totalOvers > 0 
     ? (currentInnings.totalRuns / currentInnings.totalOvers).toFixed(2) 
     : '0.00';
@@ -144,87 +153,26 @@ export default function MatchCenter({ route, navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: THEME.primary },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: THEME.background },
-  jumbotron: { 
-    backgroundColor: THEME.primary, 
-    paddingBottom: 30,
-    paddingHorizontal: 20
-  },
-  jumboHeader: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center',
-    paddingVertical: 15
-  },
+  jumbotron: { backgroundColor: THEME.primary, paddingBottom: 30, paddingHorizontal: 20 },
+  jumboHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 15 },
   backBtnIcon: { padding: 5 },
   jumboMatchName: { color: '#fff', fontWeight: '900', fontSize: 14, textTransform: 'uppercase', letterSpacing: 1 },
-  scoreRow: { 
-    flexDirection: 'row', 
-    alignItems: 'flex-end', 
-    justifyContent: 'center',
-    marginVertical: 10
-  },
+  scoreRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', marginVertical: 10 },
   mainScore: { fontSize: 72, fontWeight: '900', color: THEME.white },
   wicketScore: { fontSize: 32, fontWeight: '600', color: THEME.secondary, marginBottom: 12, marginLeft: 5 },
-  statsRow: { 
-    flexDirection: 'row', 
-    justifyContent: 'center', 
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 12,
-    paddingVertical: 12,
-    marginTop: 10
-  },
+  statsRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, paddingVertical: 12, marginTop: 10 },
   statItem: { alignItems: 'center', paddingHorizontal: 30 },
   statLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
   statValue: { color: THEME.white, fontSize: 18, fontWeight: 'bold', marginTop: 4 },
   divider: { width: 1, height: '60%', backgroundColor: 'rgba(255,255,255,0.2)' },
-  content: { 
-    flex: 1, 
-    backgroundColor: THEME.background, 
-    borderTopLeftRadius: 30, 
-    borderTopRightRadius: 30,
-    paddingTop: 25
-  },
-  sectionHeader: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center',
-    paddingHorizontal: 25,
-    marginBottom: 20
-  },
+  content: { flex: 1, backgroundColor: THEME.background, borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingTop: 25 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 25, marginBottom: 20 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: THEME.primary },
-  liveIndicator: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: 'rgba(230, 57, 70, 0.1)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12
-  },
+  liveIndicator: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(230, 57, 70, 0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   liveText: { color: THEME.live, fontSize: 10, fontWeight: '900' },
   commentaryList: { paddingHorizontal: 20, paddingBottom: 30 },
-  deliveryCard: { 
-    backgroundColor: THEME.white, 
-    borderRadius: 12, 
-    padding: 15, 
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2
-  },
-  ballCircle: { 
-    width: 36, 
-    height: 36, 
-    borderRadius: 18, 
-    backgroundColor: '#F1F2F6', 
-    justifyContent: 'center', 
-    alignItems: 'center',
-    marginRight: 15
-  },
+  deliveryCard: { backgroundColor: THEME.white, borderRadius: 12, padding: 15, flexDirection: 'row', alignItems: 'center', marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
+  ballCircle: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F1F2F6', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
   wicketBall: { backgroundColor: THEME.live },
   boundaryBall: { backgroundColor: THEME.secondary },
   ballText: { fontWeight: 'bold', color: THEME.primary },

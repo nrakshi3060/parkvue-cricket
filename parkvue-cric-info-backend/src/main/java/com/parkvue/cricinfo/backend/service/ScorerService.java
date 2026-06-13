@@ -1,5 +1,6 @@
 package com.parkvue.cricinfo.backend.service;
 
+import com.parkvue.cricinfo.backend.dto.MatchSummaryDTO;
 import com.parkvue.cricinfo.backend.model.*;
 import com.parkvue.cricinfo.backend.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,12 @@ public class ScorerService {
 
     @Autowired
     private DeliveryRepository deliveryRepository;
+
+    @Autowired
+    private CacheService cacheService;
+
+    @Autowired
+    private BroadcastingService broadcastingService;
 
     // --- Tournament Methods ---
     public List<Tournament> getAllTournaments() { return tournamentRepository.findAll(); }
@@ -116,13 +123,13 @@ public class ScorerService {
         m.setStatus(details.getStatus());
         m.setTossWinner(details.getTossWinner());
         m.setTossDecision(details.getTossDecision());
-        return matchRepository.save(m);
+        Match saved = matchRepository.save(m);
+        cacheService.evictMatchSummary(id.toString());
+        return saved;
     }
     
     @Transactional
     public void deleteMatch(UUID id) { 
-        // Manually delete related entities if database cascade is not triggered
-        // This adds extra safety
         inningsRepository.findAll().stream()
             .filter(i -> i.getMatch().getId().equals(id))
             .forEach(i -> {
@@ -131,12 +138,11 @@ public class ScorerService {
                     .forEach(d -> deliveryRepository.delete(d));
                 inningsRepository.delete(i);
             });
-        
         matchSquadRepository.findAll().stream()
             .filter(ms -> ms.getMatch().getId().equals(id))
             .forEach(ms -> matchSquadRepository.delete(ms));
-            
         matchRepository.deleteById(id); 
+        cacheService.evictMatchSummary(id.toString());
     }
 
     // --- MatchSquad Methods ---
@@ -147,13 +153,16 @@ public class ScorerService {
     }
     @Transactional
     public MatchSquad addPlayerToSquad(MatchSquad squad) { return matchSquadRepository.save(squad); }
-    
     @Transactional
     public void removePlayerFromSquad(UUID id) { matchSquadRepository.deleteById(id); }
 
     // --- Innings Methods ---
     @Transactional
-    public Innings createInnings(Innings innings) { return inningsRepository.save(innings); }
+    public Innings createInnings(Innings innings) { 
+        Innings saved = inningsRepository.save(innings);
+        cacheService.evictMatchSummary(innings.getMatch().getId().toString());
+        return saved; 
+    }
     public List<Innings> getInningsByMatchId(UUID matchId) {
         return inningsRepository.findAll().stream()
                 .filter(i -> i.getMatch().getId().equals(matchId))
@@ -191,7 +200,33 @@ public class ScorerService {
         delivery.setBallNumber(ballNum);
 
         inningsRepository.save(innings);
-        return deliveryRepository.save(delivery);
+        Delivery saved = deliveryRepository.save(delivery);
+
+        // TRIGGER ASYNC BROADCAST
+        triggerUpdate(innings.getMatch().getId());
+
+        return saved;
+    }
+
+    private void triggerUpdate(UUID matchId) {
+        // Evict cache so the next 'getMatchSummary' call gets fresh data
+        cacheService.evictMatchSummary(matchId.toString());
+        
+        // Construct the summary and broadcast via SSE
+        MatchSummaryDTO summary = new MatchSummaryDTO();
+        summary.setMatch(getMatchById(matchId));
+        List<Innings> allInnings = getInningsByMatchId(matchId);
+        summary.setInnings(allInnings);
+        if (!allInnings.isEmpty()) {
+            Innings latest = allInnings.stream().max((i1, i2) -> i1.getInningsNumber().compareTo(i2.getInningsNumber())).get();
+            summary.setRecentDeliveries(getDeliveriesByInningsId(latest.getId()));
+        }
+        
+        // Cache the new summary immediately
+        cacheService.cacheMatchSummary(matchId.toString(), summary);
+        
+        // Push to SSE clients
+        broadcastingService.broadcast(matchId.toString(), summary);
     }
 
     private BigDecimal incrementOvers(BigDecimal currentOvers) {
