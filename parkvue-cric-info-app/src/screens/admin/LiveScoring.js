@@ -4,7 +4,7 @@ import {
   Alert, ScrollView, ActivityIndicator, SafeAreaView, StatusBar, FlatList, Modal
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { submitDelivery, fetchInningsByMatchId, createInnings, fetchMatchDetails } from '../../services/MatchService';
+import { submitDelivery, fetchInningsByMatchId, createInnings, fetchMatchDetails, fetchMatchSummary } from '../../services/MatchService';
 import { AdminService } from '../../services/AdminService';
 
 const THEME = {
@@ -40,11 +40,15 @@ export default function LiveScoring({ route, navigation }) {
   const [nonStriker, setNonStriker] = useState(null);
   const [bowler, setBowler] = useState(null);
 
-  // Selector Modal State
+  // Picker Modal State
   const [pickerVisible, setPickerVisible] = useState(false);
   const [pickerTitle, setPickerTitle] = useState('');
   const [pickerOptions, setPickerOptions] = useState([]);
   const [pickerType, setPickerType] = useState(''); // 'striker', 'nonStriker', 'bowler'
+
+  // Commentary Preview State
+  const [commentaryVisible, setCommentaryVisible] = useState(false);
+  const [recentDeliveries, setRecentDeliveries] = useState([]);
 
   useEffect(() => {
     setupScoring();
@@ -56,44 +60,56 @@ export default function LiveScoring({ route, navigation }) {
       const matchData = await fetchMatchDetails(matchId);
       setMatch(matchData);
 
-      await refreshInningsData();
-
-      // Fetch Squads
-      const squad = await AdminService.getSquad(matchId);
-      setBattingSquad(squad.filter(s => s.team.id === (innings?.battingTeam?.id || matchData.team1.id)));
-      setBowlingSquad(squad.filter(s => s.team.id === (innings?.bowlingTeam?.id || matchData.team2.id)));
+      await refreshInningsData(matchData);
 
     } catch (error) {
+      console.error("Setup Error", error);
       Alert.alert("Setup Error", "Failed to initialize scoring engine.");
     } finally {
       setLoading(false);
     }
   };
 
-  const refreshInningsData = async () => {
-      const allInnings = await fetchInningsByMatchId(matchId);
-      let activeInnings = null;
+  const refreshInningsData = async (matchContext = match) => {
+      try {
+          const allInnings = await fetchInningsByMatchId(matchId);
+          let activeInnings = null;
 
-      if (allInnings && allInnings.length > 0) {
-        // Find latest active innings
-        activeInnings = allInnings.sort((a, b) => b.inningsNumber - a.inningsNumber)[0];
-      } else if (match) {
-        // Create first innings
-        activeInnings = await createInnings({
-          match: { id: matchId },
-          battingTeam: { id: match.team1.id },
-          bowlingTeam: { id: match.team2.id },
-          inningsNumber: 1
-        });
+          if (allInnings && allInnings.length > 0) {
+            activeInnings = allInnings.sort((a, b) => b.inningsNumber - a.inningsNumber)[0];
+          } else if (matchContext) {
+            // Create first innings if none exist
+            try {
+                activeInnings = await createInnings({
+                  match: { id: matchId },
+                  battingTeam: { id: matchContext.team1.id },
+                  bowlingTeam: { id: matchContext.team2.id },
+                  inningsNumber: 1
+                });
+            } catch (err) {
+                // If 409 happens here, it means someone else created it or refresh lag.
+                // Fetch again to be sure.
+                const retryInnings = await fetchInningsByMatchId(matchId);
+                activeInnings = retryInnings.sort((a, b) => b.inningsNumber - a.inningsNumber)[0];
+            }
+          }
+          
+          if (activeInnings) {
+              setInnings(activeInnings);
+              const squad = await AdminService.getSquad(matchId);
+              setBattingSquad(squad.filter(s => s.team.id === activeInnings.battingTeam.id));
+              setBowlingSquad(squad.filter(s => s.team.id === activeInnings.bowlingTeam.id));
+          }
+      } catch (e) {
+          console.error("Innings Refresh Error", e);
       }
-      if (activeInnings) setInnings(activeInnings);
   };
 
   const startNewInnings = async () => {
-    if (!match) return;
+    if (!match || !innings) return;
     setLoading(true);
     try {
-        const nextInningsNum = (innings?.inningsNumber || 1) + 1;
+        const nextInningsNum = innings.inningsNumber + 1;
         if (nextInningsNum > 2) {
             Alert.alert("Match Over", "Maximum innings reached.");
             return;
@@ -142,6 +158,17 @@ export default function LiveScoring({ route, navigation }) {
     setPickerVisible(false);
   };
 
+  const showCommentary = async () => {
+    if (!innings) return;
+    try {
+        const summary = await fetchMatchSummary(matchId);
+        setRecentDeliveries(summary?.recentDeliveries || []);
+        setCommentaryVisible(true);
+    } catch (e) {
+        console.error(e);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!innings || !striker || !nonStriker || !bowler) {
         Alert.alert("Validation", "Please select Striker, Non-Striker, and Bowler first.");
@@ -173,7 +200,6 @@ export default function LiveScoring({ route, navigation }) {
       setExtra('None');
       setIsWicket(false);
       
-      // Update local scoreboard
       await refreshInningsData();
 
     } catch (error) {
@@ -196,7 +222,6 @@ export default function LiveScoring({ route, navigation }) {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       
-      {/* Top Header */}
       <View style={styles.topHeader}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backIcon}>
           <Ionicons name="close" size={24} color={THEME.primary} />
@@ -210,8 +235,11 @@ export default function LiveScoring({ route, navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* NEW: Brief Score Overview Strip */}
-      <View style={styles.scoreStrip}>
+      <TouchableOpacity 
+          activeOpacity={0.7} 
+          onLongPress={showCommentary}
+          style={styles.scoreStrip}
+      >
           <View style={styles.scoreSummary}>
               <Text style={styles.totalRuns}>{innings?.totalRuns || 0}<Text style={styles.totalWickets}>/{innings?.totalWickets || 0}</Text></Text>
               <Text style={styles.totalOvers}>({innings?.totalOvers || '0.0'} OV)</Text>
@@ -219,11 +247,9 @@ export default function LiveScoring({ route, navigation }) {
           <View style={styles.teamBadge}>
               <Text style={styles.teamBadgeText}>{innings?.battingTeam?.shortName}</Text>
           </View>
-      </View>
+      </TouchableOpacity>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        
-        {/* Active Players Selector */}
         <View style={styles.playerSelectionRow}>
             <TouchableOpacity style={[styles.playerBtn, striker && styles.playerBtnActive]} onPress={() => openPicker('striker')}>
                 <Text style={[styles.roleLabel, striker && { color: 'rgba(255,255,255,0.7)' }]}>STRIKER</Text>
@@ -241,69 +267,40 @@ export default function LiveScoring({ route, navigation }) {
 
         <View style={styles.separator} />
 
-        {/* Runs Grid */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>RUNS OFF BAT</Text>
           <View style={styles.grid}>
             {[0, 1, 2, 3, 4, 6].map(v => (
-                <TouchableOpacity 
-                    key={v}
-                    style={[styles.runBtn, runs === v && styles.runBtnActive]} 
-                    onPress={() => setRuns(v)}
-                >
+                <TouchableOpacity key={v} style={[styles.runBtn, runs === v && styles.runBtnActive]} onPress={() => setRuns(v)}>
                     <Text style={[styles.runText, runs === v && styles.whiteText]}>{v}</Text>
                 </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* Extras Row */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>EXTRAS</Text>
           <View style={styles.extrasRow}>
             {['None', 'Wide', 'No-Ball', 'Bye', 'Leg-Bye'].map(t => (
-                <TouchableOpacity 
-                    key={t}
-                    style={[styles.extraBtn, extra === t && styles.extraBtnActive]} 
-                    onPress={() => setExtra(t)}
-                >
+                <TouchableOpacity key={t} style={[styles.extraBtn, extra === t && styles.extraBtnActive]} onPress={() => setExtra(t)}>
                     <Text style={[styles.extraText, extra === t && styles.whiteText]}>{t}</Text>
                 </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* Wicket Toggle */}
-        <TouchableOpacity 
-          activeOpacity={0.8}
-          style={[styles.wicketBtn, isWicket && styles.wicketBtnActive]} 
-          onPress={() => setIsWicket(!isWicket)}
-        >
+        <TouchableOpacity activeOpacity={0.8} style={[styles.wicketBtn, isWicket && styles.wicketBtnActive]} onPress={() => setIsWicket(!isWicket)}>
           <MaterialCommunityIcons name="cricket" size={24} color={isWicket ? "#fff" : THEME.danger} style={{marginRight: 10}} />
-          <Text style={[styles.wicketBtnText, isWicket && styles.whiteText]}>
-            {isWicket ? 'WICKET RECORDED' : 'OUT!'}
-          </Text>
+          <Text style={[styles.wicketBtnText, isWicket && styles.whiteText]}>{isWicket ? 'WICKET RECORDED' : 'OUT!'}</Text>
         </TouchableOpacity>
-
       </ScrollView>
 
-      {/* Footer Submit */}
       <View style={styles.footer}>
-        <TouchableOpacity 
-          activeOpacity={0.9}
-          style={[styles.submitBtn, submitting && styles.disabled]} 
-          onPress={handleSubmit}
-          disabled={submitting}
-        >
-          {submitting ? (
-            <ActivityIndicator color="#FFF" />
-          ) : (
-            <Text style={styles.submitBtnText}>SUBMIT DELIVERY</Text>
-          )}
+        <TouchableOpacity activeOpacity={0.9} style={[styles.submitBtn, submitting && styles.disabled]} onPress={handleSubmit} disabled={submitting}>
+          {submitting ? <ActivityIndicator color="#FFF" /> : <Text style={styles.submitBtnText}>SUBMIT DELIVERY</Text>}
         </TouchableOpacity>
       </View>
 
-      {/* Player Picker Overlay */}
       <Modal visible={pickerVisible} transparent={true} animationType="slide">
         <View style={styles.overlay}>
             <View style={styles.pickerContent}>
@@ -311,20 +308,32 @@ export default function LiveScoring({ route, navigation }) {
                     <Text style={styles.pickerTitle}>{pickerTitle}</Text>
                     <TouchableOpacity onPress={() => setPickerVisible(false)}><Ionicons name="close" size={24} color={THEME.muted} /></TouchableOpacity>
                 </View>
-                <FlatList 
-                    data={pickerOptions}
-                    keyExtractor={item => item.id}
-                    renderItem={({item}) => (
-                        <TouchableOpacity style={styles.optionBtn} onPress={() => handlePlayerSelect(item.player)}>
-                            <Text style={styles.optionName}>{item.player.firstName} {item.player.lastName}</Text>
-                            <Text style={styles.optionRole}>{item.player.role}</Text>
-                        </TouchableOpacity>
-                    )}
-                />
+                <FlatList data={pickerOptions} keyExtractor={item => item.id} renderItem={({item}) => (
+                    <TouchableOpacity style={styles.optionBtn} onPress={() => handlePlayerSelect(item.player)}>
+                        <Text style={styles.optionName}>{item.player.firstName} {item.player.lastName}</Text>
+                        <Text style={styles.optionRole}>{item.player.role}</Text>
+                    </TouchableOpacity>
+                )} />
             </View>
         </View>
       </Modal>
 
+      <Modal visible={commentaryVisible} transparent={true} animationType="fade">
+          <View style={[styles.overlay, { justifyContent: 'center', alignItems: 'center' }]}>
+              <View style={styles.commentaryContent}>
+                  <View style={styles.pickerHeader}>
+                      <Text style={styles.pickerTitle}>Recent Commentary</Text>
+                      <TouchableOpacity onPress={() => setCommentaryVisible(false)}><Ionicons name="close" size={24} color={THEME.muted} /></TouchableOpacity>
+                  </View>
+                  <FlatList data={recentDeliveries} keyExtractor={item => item.id} renderItem={({item}) => (
+                          <View style={styles.commentaryItem}>
+                              <Text style={styles.ballLabel}>{item.overNumber}.{item.ballNumber}</Text>
+                              <Text style={styles.commentaryText}>{item.commentary}</Text>
+                          </View>
+                  )} ListEmptyComponent={<Text style={styles.emptyText}>No deliveries yet.</Text>} />
+              </View>
+          </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -340,30 +349,13 @@ const styles = StyleSheet.create({
   inningsLabel: { fontSize: 11, color: THEME.secondary, fontWeight: '900', marginTop: 2 },
   endInningsBtn: { backgroundColor: 'rgba(230, 57, 70, 0.1)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   endInningsText: { color: THEME.danger, fontSize: 10, fontWeight: 'bold' },
-  
-  // NEW: Score Strip Styles
-  scoreStrip: { 
-      backgroundColor: THEME.primary, 
-      paddingHorizontal: 25, 
-      paddingVertical: 18, 
-      flexDirection: 'row', 
-      justifyContent: 'space-between', 
-      alignItems: 'center',
-      borderBottomLeftRadius: 20,
-      borderBottomRightRadius: 20,
-      elevation: 5,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 5
-  },
+  scoreStrip: { backgroundColor: THEME.primary, paddingHorizontal: 25, paddingVertical: 18, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomLeftRadius: 20, borderBottomRightRadius: 20, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 5 },
   scoreSummary: { flexDirection: 'row', alignItems: 'flex-end' },
   totalRuns: { color: '#fff', fontSize: 28, fontWeight: '900' },
   totalWickets: { color: THEME.secondary, fontSize: 22, fontWeight: 'bold' },
   totalOvers: { color: 'rgba(255,255,255,0.5)', fontSize: 14, fontWeight: 'bold', marginLeft: 12, marginBottom: 4 },
   teamBadge: { backgroundColor: THEME.secondary, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
   teamBadgeText: { color: '#fff', fontSize: 10, fontWeight: '900' },
-
   scrollContent: { padding: 20 },
   playerSelectionRow: { flexDirection: 'row', gap: 10, marginBottom: 20, marginTop: 10 },
   playerBtn: { flex: 1, backgroundColor: THEME.white, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: THEME.border, alignItems: 'center' },
@@ -371,7 +363,6 @@ const styles = StyleSheet.create({
   roleLabel: { fontSize: 8, fontWeight: '900', color: THEME.muted, marginBottom: 4 },
   playerName: { fontSize: 11, fontWeight: 'bold', color: THEME.primary },
   whiteText: { color: '#fff' },
-  
   separator: { height: 1, backgroundColor: THEME.border, marginVertical: 10, marginBottom: 25 },
   section: { marginBottom: 30 },
   sectionLabel: { fontSize: 11, fontWeight: '900', color: THEME.muted, marginBottom: 15, letterSpacing: 1 },
@@ -379,25 +370,25 @@ const styles = StyleSheet.create({
   runBtn: { width: 58, height: 58, borderRadius: 29, backgroundColor: THEME.white, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: THEME.border },
   runBtnActive: { backgroundColor: THEME.primary, borderColor: THEME.primary },
   runText: { fontSize: 18, fontWeight: 'bold', color: THEME.primary },
-  
   extrasRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   extraBtn: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, backgroundColor: THEME.white, borderWidth: 1, borderColor: THEME.border },
   extraBtnActive: { backgroundColor: THEME.secondary, borderColor: THEME.secondary },
   extraText: { fontSize: 12, fontWeight: 'bold', color: THEME.primary },
-  
   wicketBtn: { width: '100%', padding: 20, borderRadius: 15, borderWidth: 2, borderColor: THEME.danger, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' },
   wicketBtnActive: { backgroundColor: THEME.danger },
   wicketBtnText: { color: THEME.danger, fontWeight: '900', fontSize: 16, letterSpacing: 1 },
-  
   footer: { padding: 20, backgroundColor: THEME.white, borderTopWidth: 1, borderTopColor: THEME.border },
   submitBtn: { backgroundColor: THEME.primary, padding: 20, borderRadius: 15, alignItems: 'center' },
   submitBtnText: { color: THEME.white, fontSize: 16, fontWeight: 'bold', letterSpacing: 1 },
   disabled: { opacity: 0.7 },
-
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   pickerContent: { backgroundColor: '#fff', borderTopLeftRadius: 25, borderTopRightRadius: 25, padding: 25, maxHeight: '70%' },
   pickerHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   pickerTitle: { fontSize: 18, fontWeight: 'bold', color: THEME.primary },
+  commentaryContent: { backgroundColor: '#fff', borderRadius: 25, padding: 25, maxHeight: '60%', width: '90%' },
+  commentaryItem: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f5f5f5', flexDirection: 'row' },
+  ballLabel: { fontWeight: 'bold', width: 40, color: THEME.secondary },
+  commentaryText: { flex: 1, fontSize: 13, color: THEME.text },
   optionBtn: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#f5f5f5' },
   optionName: { fontSize: 16, fontWeight: 'bold', color: THEME.primary },
   optionRole: { fontSize: 12, color: THEME.muted, marginTop: 2 }
