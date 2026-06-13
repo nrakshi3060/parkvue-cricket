@@ -33,12 +33,19 @@ export default function AdminDashboard({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Command Center</Text>
-          <Text style={styles.headerSubtitle}>System Management & Match Control</Text>
+      
+      {/* Standardized Admin Header */}
+      <View style={styles.topHeader}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={24} color={THEME.primary} />
+        </TouchableOpacity>
+        <View>
+            <Text style={styles.headerTitle}>Command Center</Text>
+            <Text style={styles.headerSubtitle}>System Management</Text>
         </View>
+      </View>
 
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>CORE CONFIGURATION</Text>
           <View style={styles.grid}>
@@ -110,10 +117,11 @@ export default function AdminDashboard({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: THEME.background },
+  topHeader: { flexDirection: 'row', alignItems: 'center', padding: 25, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee' },
+  backBtn: { marginRight: 15, padding: 5 },
+  headerTitle: { fontSize: 22, fontWeight: '900', color: THEME.primary, letterSpacing: -0.5 },
+  headerSubtitle: { fontSize: 13, color: THEME.muted, fontWeight: '600' },
   scrollContent: { padding: 25 },
-  header: { marginBottom: 35 },
-  headerTitle: { fontSize: 28, fontWeight: '900', color: THEME.primary, letterSpacing: -0.5 },
-  headerSubtitle: { fontSize: 15, color: THEME.muted, marginTop: 6, fontWeight: '500' },
   section: { marginBottom: 35 },
   sectionLabel: { fontSize: 13, fontWeight: 'bold', color: THEME.muted, marginBottom: 20, letterSpacing: 1.5 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
@@ -138,6 +146,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12
   },
+  gridIcon: { fontSize: 24 },
   gridTitle: { fontSize: 14, fontWeight: '700', color: THEME.primary },
   heroBtn: { 
     backgroundColor: THEME.primary, 

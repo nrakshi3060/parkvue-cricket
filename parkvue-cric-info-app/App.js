@@ -25,6 +25,7 @@ export default function App() {
           headerTitleStyle: { fontWeight: 'bold' },
         }}
       >
+        {/* Fan/Public Screens */}
         <Stack.Screen 
           name="Home" 
           component={HomeScreen} 
@@ -45,23 +46,27 @@ export default function App() {
           component={PlayerAnalyticsScreen} 
           options={{ headerShown: false }} 
         />
+
+        {/* Admin Screens (All using Custom Headers for Premium Feel) */}
         <Stack.Screen 
           name="AdminDashboard" 
           component={AdminDashboard} 
-          options={{ title: 'Admin Command Center' }}
+          options={{ headerShown: false }}
         />
         <Stack.Screen 
           name="ManageEntity" 
           component={ManageEntityScreen} 
+          options={{ headerShown: false }}
         />
         <Stack.Screen 
           name="SelectMatchScoring" 
           component={SelectMatchScoring} 
-          options={{ title: 'Select Match' }}
+          options={{ headerShown: false }}
         />
         <Stack.Screen 
           name="ManageSquad" 
           component={ManageSquadScreen} 
+          options={{ headerShown: false }}
         />
         <Stack.Screen 
           name="LiveScoring" 
@@ -71,7 +76,7 @@ export default function App() {
         <Stack.Screen 
           name="MatchManagement" 
           component={MatchManagementScreen} 
-          options={{ title: 'Match Schedules' }}
+          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, Text, View, FlatList, TouchableOpacity, 
-  ActivityIndicator, SafeAreaView 
+  ActivityIndicator, SafeAreaView, StatusBar 
 } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { fetchAllMatches } from '../../services/MatchService';
 
 const THEME = {
@@ -38,7 +38,19 @@ export default function SelectMatchScoring({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.header}>Select Match to Score</Text>
+      <StatusBar barStyle="dark-content" />
+      
+      {/* Standardized Admin Header */}
+      <View style={styles.topHeader}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={24} color={THEME.primary} />
+        </TouchableOpacity>
+        <View>
+            <Text style={styles.headerTitle}>Select Match</Text>
+            <Text style={styles.headerSubtitle}>Start Live Scoring</Text>
+        </View>
+      </View>
+
       <FlatList
         data={matches}
         keyExtractor={(item) => item.id}
@@ -70,7 +82,10 @@ export default function SelectMatchScoring({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: THEME.background },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { fontSize: 18, fontWeight: 'bold', padding: 20, color: THEME.primary, letterSpacing: 1 },
+  topHeader: { flexDirection: 'row', alignItems: 'center', padding: 25, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee' },
+  backBtn: { marginRight: 15, padding: 5 },
+  headerTitle: { fontSize: 22, fontWeight: '900', color: THEME.primary, letterSpacing: -0.5 },
+  headerSubtitle: { fontSize: 13, color: THEME.muted, fontWeight: '600' },
   matchCard: { 
     flexDirection: 'row',
     alignItems: 'center',
