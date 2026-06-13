@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   StyleSheet, Text, View, FlatList, TouchableOpacity, 
-  ActivityIndicator, RefreshControl, SafeAreaView, StatusBar 
+  ActivityIndicator, RefreshControl, SafeAreaView, StatusBar, ScrollView, TextInput
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { fetchAllMatches } from '../services/MatchService';
 
 const THEME = {
@@ -16,45 +16,88 @@ const THEME = {
   live: '#E63946',
   upcoming: '#ECA154',
   completed: '#2A9D8F',
-  white: '#FFFFFF'
+  white: '#FFFFFF',
+  accent: '#A5D7E8'
 };
 
 export default function HomeScreen({ navigation }) {
-  const [matches, setMatches] = useState([]);
+  const [allMatches, setAllMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState('');
 
   const loadMatches = async () => {
-    setLoading(true);
     const data = await fetchAllMatches();
-    setMatches(data || []);
+    setAllMatches(data || []);
     setLoading(false);
   };
 
   const onRefresh = async () => {
     setRefreshing(true);
-    const data = await fetchAllMatches();
-    setMatches(data || []);
+    await loadMatches();
     setRefreshing(false);
   };
 
   useEffect(() => {
     loadMatches();
+    // Refresh list every minute
+    const interval = setInterval(loadMatches, 60000);
+    return () => clearInterval(interval);
   }, []);
 
-  const StatusBadge = ({ status }) => {
-    const isLive = status?.toLowerCase() === 'live';
-    const isUpcoming = status?.toLowerCase() === 'upcoming';
-    
-    let bgColor = THEME.completed;
-    if (isLive) bgColor = THEME.live;
-    if (isUpcoming) bgColor = THEME.upcoming;
+  // Categorization Logic
+  const filteredData = useMemo(() => {
+      const filtered = search 
+        ? allMatches.filter(m => 
+            m.team1?.name.toLowerCase().includes(search.toLowerCase()) || 
+            m.team2?.name.toLowerCase().includes(search.toLowerCase()) ||
+            m.tournament?.name.toLowerCase().includes(search.toLowerCase()))
+        : allMatches;
 
+      return {
+          hero: filtered.find(m => m.status === 'Live'),
+          live: filtered.filter(m => m.status === 'Live'),
+          upcoming: filtered.filter(m => m.status === 'Upcoming'),
+          completed: filtered.filter(m => m.status === 'Completed'),
+      };
+  }, [allMatches, search]);
+
+  const SectionHeader = ({ title, icon }) => (
+    <View style={styles.sectionHeader}>
+        <Ionicons name={icon} size={16} color={THEME.muted} style={{ marginRight: 8 }} />
+        <Text style={styles.sectionTitle}>{title}</Text>
+    </View>
+  );
+
+  const MatchCard = ({ item, isSmall = false }) => {
+    const isLive = item.status === 'Live';
     return (
-      <View style={[styles.badge, { backgroundColor: bgColor }]}>
-        {isLive && <Ionicons name="radio-outline" size={12} color="#fff" style={{marginRight: 4}} />}
-        <Text style={styles.badgeText}>{status?.toUpperCase()}</Text>
-      </View>
+        <TouchableOpacity 
+          style={[styles.matchCard, isSmall && styles.smallCard]}
+          activeOpacity={0.9}
+          onPress={() => navigation.navigate('MatchCenter', { matchId: item.id })}
+        >
+          <View style={styles.cardTop}>
+            <Text style={styles.venueText} numberOfLines={1}>{item.venue || 'Venue TBA'}</Text>
+            <View style={[styles.miniBadge, { backgroundColor: isLive ? THEME.live : THEME.upcoming }]}>
+                <Text style={styles.miniBadgeText}>{item.status?.toUpperCase()}</Text>
+            </View>
+          </View>
+          
+          <View style={styles.cardTeams}>
+            <View style={styles.teamRow}>
+                <Text style={styles.teamAbbr}>{item.team1?.shortName}</Text>
+                <Text style={styles.teamFull} numberOfLines={1}>{item.team1?.name}</Text>
+            </View>
+            <View style={styles.vsLine} />
+            <View style={[styles.teamRow, { alignItems: 'flex-end' }]}>
+                <Text style={styles.teamAbbr}>{item.team2?.shortName}</Text>
+                <Text style={[styles.teamFull, { textAlign: 'right' }]} numberOfLines={1}>{item.team2?.name}</Text>
+            </View>
+          </View>
+
+          <Text style={styles.tournName}>{item.tournament?.name}</Text>
+        </TouchableOpacity>
     );
   };
 
@@ -69,84 +112,106 @@ export default function HomeScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
+      
+      {/* Premium Header */}
       <View style={styles.header}>
-        <Text style={styles.brand}>parkvue <Text style={{ color: THEME.secondary }}>cric-info</Text></Text>
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-            <TouchableOpacity 
-              style={styles.analyticsBtn}
-              onPress={() => navigation.navigate('PlayerList')}
-            >
-              <Ionicons name="bar-chart-outline" size={16} color={THEME.white} />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.adminBtn}
-              onPress={() => navigation.navigate('AdminDashboard')}
-            >
-              <Ionicons name="settings-outline" size={16} color={THEME.secondary} style={{marginRight: 4}} />
-              <Text style={styles.adminBtnText}>ADMIN</Text>
-            </TouchableOpacity>
+        <View style={styles.topRow}>
+            <Text style={styles.brand}>parkvue<Text style={{color: THEME.secondary}}>.cric</Text></Text>
+            <View style={styles.actionGroup}>
+                <TouchableOpacity onPress={() => navigation.navigate('PlayerList')} style={styles.iconBtn}>
+                    <Ionicons name="bar-chart" size={20} color="#fff" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.navigate('AdminDashboard')} style={styles.iconBtn}>
+                    <Ionicons name="settings" size={20} color="#fff" />
+                </TouchableOpacity>
+            </View>
+        </View>
+
+        <View style={styles.searchBar}>
+            <Ionicons name="search" size={18} color="rgba(255,255,255,0.5)" />
+            <TextInput 
+                style={styles.searchInput}
+                placeholder="Find a team or tournament..."
+                placeholderTextColor="rgba(255,255,255,0.4)"
+                value={search}
+                onChangeText={setSearch}
+            />
+            {search.length > 0 && (
+                <TouchableOpacity onPress={() => setSearch('')}>
+                    <Ionicons name="close-circle" size={18} color="rgba(255,255,255,0.5)" />
+                </TouchableOpacity>
+            )}
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>Current Matches</Text>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={THEME.secondary} />}
+      >
+        {/* HERO SECTION */}
+        {filteredData.hero && (
+            <View style={styles.heroSection}>
+                <SectionHeader title="PREMIER LIVE" icon="flame" />
+                <TouchableOpacity 
+                    style={styles.heroCard}
+                    activeOpacity={0.9}
+                    onPress={() => navigation.navigate('MatchCenter', { matchId: filteredData.hero.id })}
+                >
+                    <View style={styles.heroBadge}><View style={styles.pulse} /><Text style={styles.heroBadgeText}>LIVE NOW</Text></View>
+                    <Text style={styles.heroVenue}>{filteredData.hero.venue}</Text>
+                    <View style={styles.heroTeams}>
+                        <View style={styles.heroTeam}>
+                            <Text style={styles.heroAbbr}>{filteredData.hero.team1?.shortName}</Text>
+                            <Text style={styles.heroFullName}>{filteredData.hero.team1?.name}</Text>
+                        </View>
+                        <View style={styles.heroVs}><Text style={styles.heroVsText}>VS</Text></View>
+                        <View style={[styles.heroTeam, { alignItems: 'flex-end' }]}>
+                            <Text style={styles.heroAbbr}>{filteredData.hero.team2?.shortName}</Text>
+                            <Text style={[styles.heroFullName, { textAlign: 'right' }]}>{filteredData.hero.team2?.name}</Text>
+                        </View>
+                    </View>
+                    <Text style={styles.heroTourn}>{filteredData.hero.tournament?.name}</Text>
+                </TouchableOpacity>
+            </View>
+        )}
 
-      {matches.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Ionicons name="calendar-clear-outline" size={60} color="#ccc" />
-          <Text style={styles.emptyText}>No active matches found.</Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={loadMatches}>
-            <Ionicons name="refresh-outline" size={18} color="#fff" style={{marginRight: 6}} />
-            <Text style={styles.retryText}>Check for Updates</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <FlatList
-          data={matches}
-          contentContainerStyle={styles.listContent}
-          keyExtractor={(item) => item.id}
-          refreshControl={
-            <RefreshControl 
-              refreshing={refreshing} 
-              onRefresh={onRefresh} 
-              tintColor={THEME.secondary}
-            />
-          }
-          renderItem={({ item }) => (
-            <TouchableOpacity 
-              style={styles.matchCard}
-              activeOpacity={0.9}
-              onPress={() => navigation.navigate('MatchCenter', { matchId: item.id })}
-            >
-              <View style={styles.cardHeader}>
-                <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                    <Ionicons name="location-outline" size={12} color={THEME.muted} style={{marginRight: 4}} />
-                    <Text style={styles.venueText}>{item.venue || 'TBA'}</Text>
-                </View>
-                <StatusBadge status={item.status} />
-              </View>
-              
-              <View style={styles.teamsRow}>
-                <View style={styles.teamInfo}>
-                  <Text style={styles.teamName}>{item.team1?.name}</Text>
-                  <Text style={styles.teamShort}>{item.team1?.shortName}</Text>
-                </View>
-                <View style={styles.vsContainer}><Text style={styles.vsText}>VS</Text></View>
-                <View style={[styles.teamInfo, { alignItems: 'flex-end' }]}>
-                  <Text style={[styles.teamName, { textAlign: 'right' }]}>{item.team2?.name}</Text>
-                  <Text style={styles.teamShort}>{item.team2?.shortName}</Text>
-                </View>
-              </View>
-              
-              <View style={styles.cardFooter}>
-                <Ionicons name="trophy-outline" size={12} color={THEME.muted} style={{marginRight: 4}} />
-                <Text style={styles.tournamentName}>
-                  {item.tournament?.name || 'Unofficial Match'}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          )}
-        />
-      )}
+        {/* OTHER LIVE MATCHES */}
+        {filteredData.live.filter(m => m.id !== filteredData.hero?.id).length > 0 && (
+            <View style={styles.section}>
+                <SectionHeader title="OTHER LIVE GAMES" icon="radio" />
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalList}>
+                    {filteredData.live.filter(m => m.id !== filteredData.hero?.id).map(item => (
+                        <MatchCard key={item.id} item={item} isSmall={true} />
+                    ))}
+                </ScrollView>
+            </View>
+        )}
+
+        {/* UPCOMING */}
+        {filteredData.upcoming.length > 0 && (
+            <View style={styles.section}>
+                <SectionHeader title="UPCOMING FIXTURES" icon="calendar" />
+                {filteredData.upcoming.map(item => <MatchCard key={item.id} item={item} />)}
+            </View>
+        )}
+
+        {/* COMPLETED */}
+        {filteredData.completed.length > 0 && (
+            <View style={styles.section}>
+                <SectionHeader title="RECENT RESULTS" icon="checkmark-done-circle" />
+                {filteredData.completed.map(item => <MatchCard key={item.id} item={item} />)}
+            </View>
+        )}
+
+        {allMatches.length === 0 && (
+            <View style={styles.empty}>
+                <Ionicons name="documents-outline" size={48} color="#ccc" />
+                <Text style={styles.emptyText}>No fixtures scheduled yet.</Text>
+            </View>
+        )}
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -155,104 +220,98 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: THEME.background },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: THEME.background },
   header: { 
-    backgroundColor: THEME.primary, 
-    paddingHorizontal: 25, 
-    paddingVertical: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
+      backgroundColor: THEME.primary, 
+      paddingTop: 10,
+      paddingHorizontal: 25, 
+      paddingBottom: 25,
+      borderBottomLeftRadius: 35,
+      borderBottomRightRadius: 35,
+      elevation: 10,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.15,
+      shadowRadius: 20
   },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   brand: { fontSize: 24, fontWeight: '900', color: '#FFFFFF', letterSpacing: -1 },
-  adminBtn: { 
-    backgroundColor: 'rgba(25, 167, 206, 0.1)', 
-    paddingHorizontal: 15, 
-    paddingVertical: 8, 
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(25, 167, 206, 0.4)',
-    flexDirection: 'row',
-    alignItems: 'center'
+  actionGroup: { flexDirection: 'row', gap: 12 },
+  iconBtn: { width: 44, height: 44, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
+  searchBar: { 
+      backgroundColor: 'rgba(255,255,255,0.1)', 
+      borderRadius: 15, 
+      paddingHorizontal: 15, 
+      flexDirection: 'row', 
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.1)'
   },
-  analyticsBtn: {
-    backgroundColor: THEME.secondary,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 3
+  searchInput: { flex: 1, height: 44, color: '#fff', marginLeft: 10, fontSize: 14, fontWeight: '600' },
+  
+  scrollContent: { paddingHorizontal: 25, paddingTop: 25 },
+  section: { marginBottom: 30 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
+  sectionTitle: { fontSize: 12, fontWeight: '900', color: THEME.muted, letterSpacing: 1.5, textTransform: 'uppercase' },
+  
+  // Hero Card
+  heroSection: { marginBottom: 35 },
+  heroCard: { 
+      backgroundColor: THEME.primary, 
+      borderRadius: 30, 
+      padding: 25,
+      elevation: 8,
+      shadowColor: THEME.primary,
+      shadowOpacity: 0.3,
+      shadowRadius: 20,
+      shadowOffset: { width: 0, height: 10 }
   },
-  adminBtnText: { color: THEME.secondary, fontWeight: '900', fontSize: 11, letterSpacing: 1 },
-  sectionTitle: { 
-    fontSize: 13, 
-    fontWeight: 'bold', 
-    color: THEME.muted, 
-    marginTop: 30, 
-    marginBottom: 20, 
-    marginHorizontal: 25,
-    textTransform: 'uppercase',
-    letterSpacing: 1.5
+  heroBadge: { 
+      alignSelf: 'flex-start', 
+      backgroundColor: 'rgba(230, 57, 70, 0.2)', 
+      paddingHorizontal: 12, 
+      paddingVertical: 6, 
+      borderRadius: 20,
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 15,
+      borderWidth: 1,
+      borderColor: 'rgba(230, 57, 70, 0.4)'
   },
-  listContent: { paddingHorizontal: 20, paddingBottom: 40 },
+  pulse: { width: 6, height: 6, borderRadius: 3, backgroundColor: THEME.live, marginRight: 8 },
+  heroBadgeText: { color: THEME.live, fontSize: 10, fontWeight: '900', letterSpacing: 1 },
+  heroVenue: { color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 15 },
+  heroTeams: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  heroTeam: { flex: 1 },
+  heroAbbr: { color: '#fff', fontSize: 28, fontWeight: '900', letterSpacing: -1 },
+  heroFullName: { color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 4, fontWeight: '600' },
+  heroVs: { width: 34, height: 34, borderRadius: 17, backgroundColor: THEME.secondary, justifyContent: 'center', alignItems: 'center', marginHorizontal: 15 },
+  heroVsText: { color: '#fff', fontSize: 10, fontWeight: '900' },
+  heroTourn: { color: THEME.secondary, fontSize: 13, fontWeight: 'bold', fontStyle: 'italic' },
+
+  // List Cards
+  horizontalList: { marginHorizontal: -25, paddingHorizontal: 25 },
+  smallCard: { width: 280, marginRight: 15 },
   matchCard: { 
-    backgroundColor: THEME.card, 
-    borderRadius: 24, 
-    padding: 25,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.05,
-    shadowRadius: 15,
-    elevation: 4
+      backgroundColor: THEME.card, 
+      borderRadius: 20, 
+      padding: 20, 
+      marginBottom: 15,
+      borderWidth: 1,
+      borderColor: THEME.border,
+      shadowColor: '#000',
+      shadowOpacity: 0.03,
+      shadowRadius: 10,
+      elevation: 2
   },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  venueText: { fontSize: 11, color: THEME.muted, fontWeight: '700', textTransform: 'uppercase' },
-  badge: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    paddingHorizontal: 10, 
-    paddingVertical: 5, 
-    borderRadius: 8 
-  },
-  badgeText: { color: '#FFF', fontSize: 10, fontWeight: '900' },
-  teamsRow: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F8F9FA',
-    marginBottom: 20
-  },
-  teamInfo: { flex: 1 },
-  teamName: { fontSize: 18, fontWeight: '900', color: THEME.primary, letterSpacing: -0.5 },
-  teamShort: { fontSize: 12, color: THEME.muted, marginTop: 4, fontWeight: 'bold' },
-  vsContainer: { 
-    width: 36, height: 36, borderRadius: 18, 
-    backgroundColor: THEME.background, 
-    justifyContent: 'center', alignItems: 'center',
-    marginHorizontal: 15
-  },
-  vsText: { fontSize: 10, fontWeight: '900', color: THEME.secondary },
-  cardFooter: { flexDirection: 'row', alignItems: 'center' },
-  tournamentName: { fontSize: 12, color: THEME.muted, fontWeight: '600', fontStyle: 'italic' },
-  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 50 },
-  emptyText: { color: THEME.muted, textAlign: 'center', fontSize: 16, marginTop: 20, marginBottom: 30, fontWeight: '600' },
-  retryBtn: { 
-    backgroundColor: THEME.primary, 
-    paddingHorizontal: 25, 
-    paddingVertical: 15, 
-    borderRadius: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    elevation: 5
-  },
-  retryText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 }
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  venueText: { fontSize: 10, fontWeight: 'bold', color: THEME.muted, textTransform: 'uppercase', flex: 1 },
+  miniBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  miniBadgeText: { color: '#fff', fontSize: 8, fontWeight: '900' },
+  cardTeams: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
+  teamRow: { flex: 1 },
+  teamAbbr: { fontSize: 18, fontWeight: '900', color: THEME.primary },
+  teamFull: { fontSize: 11, color: THEME.muted, marginTop: 2, fontWeight: '500' },
+  vsLine: { width: 1, height: 30, backgroundColor: THEME.border, marginHorizontal: 15 },
+  tournName: { fontSize: 11, color: THEME.muted, fontStyle: 'italic', fontWeight: '500' },
+  empty: { alignItems: 'center', marginTop: 100 },
+  emptyText: { marginTop: 15, color: THEME.muted, fontWeight: '600' }
 });
