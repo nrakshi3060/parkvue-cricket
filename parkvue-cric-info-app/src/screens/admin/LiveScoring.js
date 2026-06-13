@@ -56,27 +56,12 @@ export default function LiveScoring({ route, navigation }) {
       const matchData = await fetchMatchDetails(matchId);
       setMatch(matchData);
 
-      const allInnings = await fetchInningsByMatchId(matchId);
-      let activeInnings = null;
-
-      if (allInnings && allInnings.length > 0) {
-        // Find latest active innings
-        activeInnings = allInnings.sort((a, b) => b.inningsNumber - a.inningsNumber)[0];
-      } else {
-        // Create first innings
-        activeInnings = await createInnings({
-          match: { id: matchId },
-          battingTeam: { id: matchData.team1.id },
-          bowlingTeam: { id: matchData.team2.id },
-          inningsNumber: 1
-        });
-      }
-      setInnings(activeInnings);
+      await refreshInningsData();
 
       // Fetch Squads
       const squad = await AdminService.getSquad(matchId);
-      setBattingSquad(squad.filter(s => s.team.id === activeInnings.battingTeam.id));
-      setBowlingSquad(squad.filter(s => s.team.id === activeInnings.bowlingTeam.id));
+      setBattingSquad(squad.filter(s => s.team.id === (innings?.battingTeam?.id || matchData.team1.id)));
+      setBowlingSquad(squad.filter(s => s.team.id === (innings?.bowlingTeam?.id || matchData.team2.id)));
 
     } catch (error) {
       Alert.alert("Setup Error", "Failed to initialize scoring engine.");
@@ -85,11 +70,29 @@ export default function LiveScoring({ route, navigation }) {
     }
   };
 
+  const refreshInningsData = async () => {
+      const allInnings = await fetchInningsByMatchId(matchId);
+      let activeInnings = null;
+
+      if (allInnings && allInnings.length > 0) {
+        // Find latest active innings
+        activeInnings = allInnings.sort((a, b) => b.inningsNumber - a.inningsNumber)[0];
+      } else if (match) {
+        // Create first innings
+        activeInnings = await createInnings({
+          match: { id: matchId },
+          battingTeam: { id: match.team1.id },
+          bowlingTeam: { id: match.team2.id },
+          inningsNumber: 1
+        });
+      }
+      if (activeInnings) setInnings(activeInnings);
+  };
+
   const startNewInnings = async () => {
     if (!match) return;
     setLoading(true);
     try {
-        // Invert teams
         const nextInningsNum = (innings?.inningsNumber || 1) + 1;
         if (nextInningsNum > 2) {
             Alert.alert("Match Over", "Maximum innings reached.");
@@ -104,12 +107,10 @@ export default function LiveScoring({ route, navigation }) {
         });
         
         setInnings(newInnings);
-        // Clear active players for new innings
         setStriker(null);
         setNonStriker(null);
         setBowler(null);
         
-        // Refresh squads
         const squad = await AdminService.getSquad(matchId);
         setBattingSquad(squad.filter(s => s.team.id === newInnings.battingTeam.id));
         setBowlingSquad(squad.filter(s => s.team.id === newInnings.bowlingTeam.id));
@@ -162,7 +163,6 @@ export default function LiveScoring({ route, navigation }) {
       
       await submitDelivery(payload);
       
-      // Basic automation: swap strike on odd runs
       if (runs % 2 !== 0 && !isWicket) {
           const temp = striker;
           setStriker(nonStriker);
@@ -172,7 +172,10 @@ export default function LiveScoring({ route, navigation }) {
       setRuns(0);
       setExtra('None');
       setIsWicket(false);
-      // In a real app we'd fetch updated score here
+      
+      // Update local scoreboard
+      await refreshInningsData();
+
     } catch (error) {
       Alert.alert('Error', 'Failed to record ball.');
     } finally {
@@ -207,16 +210,27 @@ export default function LiveScoring({ route, navigation }) {
         </TouchableOpacity>
       </View>
 
+      {/* NEW: Brief Score Overview Strip */}
+      <View style={styles.scoreStrip}>
+          <View style={styles.scoreSummary}>
+              <Text style={styles.totalRuns}>{innings?.totalRuns || 0}<Text style={styles.totalWickets}>/{innings?.totalWickets || 0}</Text></Text>
+              <Text style={styles.totalOvers}>({innings?.totalOvers || '0.0'} OV)</Text>
+          </View>
+          <View style={styles.teamBadge}>
+              <Text style={styles.teamBadgeText}>{innings?.battingTeam?.shortName}</Text>
+          </View>
+      </View>
+
       <ScrollView contentContainerStyle={styles.scrollContent}>
         
         {/* Active Players Selector */}
         <View style={styles.playerSelectionRow}>
             <TouchableOpacity style={[styles.playerBtn, striker && styles.playerBtnActive]} onPress={() => openPicker('striker')}>
-                <Text style={styles.roleLabel}>STRIKER</Text>
+                <Text style={[styles.roleLabel, striker && { color: 'rgba(255,255,255,0.7)' }]}>STRIKER</Text>
                 <Text style={[styles.playerName, striker && styles.whiteText]} numberOfLines={1}>{striker ? `${striker.firstName} ${striker.lastName}` : 'Pick'}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.playerBtn, nonStriker && styles.playerBtnActive]} onPress={() => openPicker('nonStriker')}>
-                <Text style={styles.roleLabel}>NON-STRIKER</Text>
+                <Text style={[styles.roleLabel, nonStriker && { color: 'rgba(255,255,255,0.7)' }]}>NON-STRIKER</Text>
                 <Text style={[styles.playerName, nonStriker && styles.whiteText]} numberOfLines={1}>{nonStriker ? `${nonStriker.firstName} ${nonStriker.lastName}` : 'Pick'}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.playerBtn, { backgroundColor: '#F1F2F6' }, bowler && { backgroundColor: THEME.primary }]} onPress={() => openPicker('bowler')}>
@@ -326,9 +340,32 @@ const styles = StyleSheet.create({
   inningsLabel: { fontSize: 11, color: THEME.secondary, fontWeight: '900', marginTop: 2 },
   endInningsBtn: { backgroundColor: 'rgba(230, 57, 70, 0.1)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   endInningsText: { color: THEME.danger, fontSize: 10, fontWeight: 'bold' },
-  scrollContent: { padding: 20 },
   
-  playerSelectionRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
+  // NEW: Score Strip Styles
+  scoreStrip: { 
+      backgroundColor: THEME.primary, 
+      paddingHorizontal: 25, 
+      paddingVertical: 18, 
+      flexDirection: 'row', 
+      justifyContent: 'space-between', 
+      alignItems: 'center',
+      borderBottomLeftRadius: 20,
+      borderBottomRightRadius: 20,
+      elevation: 5,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 5
+  },
+  scoreSummary: { flexDirection: 'row', alignItems: 'flex-end' },
+  totalRuns: { color: '#fff', fontSize: 28, fontWeight: '900' },
+  totalWickets: { color: THEME.secondary, fontSize: 22, fontWeight: 'bold' },
+  totalOvers: { color: 'rgba(255,255,255,0.5)', fontSize: 14, fontWeight: 'bold', marginLeft: 12, marginBottom: 4 },
+  teamBadge: { backgroundColor: THEME.secondary, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
+  teamBadgeText: { color: '#fff', fontSize: 10, fontWeight: '900' },
+
+  scrollContent: { padding: 20 },
+  playerSelectionRow: { flexDirection: 'row', gap: 10, marginBottom: 20, marginTop: 10 },
   playerBtn: { flex: 1, backgroundColor: THEME.white, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: THEME.border, alignItems: 'center' },
   playerBtnActive: { backgroundColor: THEME.secondary, borderColor: THEME.secondary },
   roleLabel: { fontSize: 8, fontWeight: '900', color: THEME.muted, marginBottom: 4 },
