@@ -36,6 +36,8 @@ services:
       SPRING_DATASOURCE_USERNAME: cric_user
       SPRING_DATASOURCE_PASSWORD: cric_password
       SPRING_JPA_HIBERNATE_DDL_AUTO: none
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
     depends_on:
       - postgres
       - redis
