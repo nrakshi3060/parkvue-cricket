@@ -69,6 +69,11 @@ public class MatchController {
         return summary;
     }
 
+    @GetMapping("/{id}/scorecard")
+    public ScorecardDTO getMatchScorecard(@PathVariable UUID id) {
+        return analyticsService.generateMatchScorecard(id);
+    }
+
     @GetMapping(value = "/{id}/stream", produces = "text/event-stream")
     public SseEmitter streamMatchUpdates(@PathVariable UUID id) {
         return broadcastingService.subscribe(id.toString());

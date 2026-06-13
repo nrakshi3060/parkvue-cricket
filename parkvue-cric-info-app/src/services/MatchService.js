@@ -44,6 +44,17 @@ export const fetchMatchSummary = async (matchId) => {
   }
 };
 
+export const fetchMatchScorecard = async (matchId) => {
+  try {
+    const response = await fetch(`${BASE_URL}/matches/${matchId}/scorecard`);
+    if (!response.ok) throw new Error('Failed to fetch scorecard');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching scorecard:', error);
+    return null;
+  }
+};
+
 export const fetchInningsByMatchId = async (matchId) => {
   try {
     const response = await fetch(`${BASE_URL}/scorer/matches/${matchId}/innings`);

@@ -11,6 +11,7 @@ import ManageSquadScreen from './src/screens/admin/ManageSquadScreen';
 import MatchManagementScreen from './src/screens/admin/MatchManagementScreen';
 import PlayerListScreen from './src/screens/PlayerListScreen';
 import PlayerAnalyticsScreen from './src/screens/PlayerAnalyticsScreen';
+import ScorecardScreen from './src/screens/ScorecardScreen';
 
 const Stack = createStackNavigator();
 
@@ -34,6 +35,11 @@ export default function App() {
         <Stack.Screen 
           name="MatchCenter" 
           component={MatchCenter} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="Scorecard" 
+          component={ScorecardScreen} 
           options={{ headerShown: false }} 
         />
         <Stack.Screen 

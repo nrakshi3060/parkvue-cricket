@@ -122,6 +122,14 @@ export default function MatchCenter({ route, navigation }) {
             <Text style={styles.statValue}>{crr}</Text>
           </View>
         </View>
+
+        <TouchableOpacity 
+            style={styles.scorecardLink}
+            onPress={() => navigation.navigate('Scorecard', { matchId })}
+        >
+            <Text style={styles.scorecardLinkText}>VIEW FULL SCORECARD</Text>
+            <Ionicons name="chevron-forward" size={16} color={THEME.secondary} />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.content}>
@@ -165,7 +173,21 @@ const styles = StyleSheet.create({
   statLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
   statValue: { color: THEME.white, fontSize: 18, fontWeight: 'bold', marginTop: 4 },
   divider: { width: 1, height: '60%', backgroundColor: 'rgba(255,255,255,0.2)' },
-  content: { flex: 1, backgroundColor: THEME.background, borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingTop: 25 },
+  scorecardLink: { 
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      marginTop: 20,
+      backgroundColor: 'rgba(25, 167, 206, 0.1)',
+      paddingVertical: 10,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: 'rgba(25, 167, 206, 0.3)'
+  },
+  scorecardLinkText: { color: THEME.secondary, fontWeight: 'bold', fontSize: 11, letterSpacing: 1, marginRight: 5 },
+  content: { 
+    flex: 1, 
+  ...,old_string: backgroundColor: THEME.background, borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingTop: 25 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 25, marginBottom: 20 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: THEME.primary },
   liveIndicator: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(230, 57, 70, 0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
