@@ -1,4 +1,4 @@
-const BASE_URL = 'https://short-vans-like.loca.lt/api/scorer';
+const BASE_URL = 'https://moves-lady-sas-beautiful.trycloudflare.com/api/scorer';
 
 const fetchWrapper = async (url, options = {}) => {
   try {

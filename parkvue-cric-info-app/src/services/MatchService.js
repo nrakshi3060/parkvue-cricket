@@ -1,4 +1,4 @@
-const BASE_URL = 'https://short-vans-like.loca.lt/api'; // Public tunnel URL for external access
+const BASE_URL = 'https://moves-lady-sas-beautiful.trycloudflare.com/api'; // Stable Cloudflare tunnel URL
 
 export const fetchAllMatches = async () => {
   try {
