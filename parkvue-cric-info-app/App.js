@@ -9,6 +9,8 @@ import ManageEntityScreen from './src/screens/admin/ManageEntityScreen';
 import SelectMatchScoring from './src/screens/admin/SelectMatchScoring';
 import ManageSquadScreen from './src/screens/admin/ManageSquadScreen';
 import MatchManagementScreen from './src/screens/admin/MatchManagementScreen';
+import PlayerListScreen from './src/screens/PlayerListScreen';
+import PlayerAnalyticsScreen from './src/screens/PlayerAnalyticsScreen';
 
 const Stack = createStackNavigator();
 
@@ -31,6 +33,16 @@ export default function App() {
         <Stack.Screen 
           name="MatchCenter" 
           component={MatchCenter} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="PlayerList" 
+          component={PlayerListScreen} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="PlayerAnalytics" 
+          component={PlayerAnalyticsScreen} 
           options={{ headerShown: false }} 
         />
         <Stack.Screen 

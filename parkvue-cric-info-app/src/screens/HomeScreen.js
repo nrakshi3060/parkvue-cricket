@@ -15,7 +15,8 @@ const THEME = {
   muted: '#636E72',
   live: '#E63946',
   upcoming: '#ECA154',
-  completed: '#2A9D8F'
+  completed: '#2A9D8F',
+  white: '#FFFFFF'
 };
 
 export default function HomeScreen({ navigation }) {
@@ -70,13 +71,21 @@ export default function HomeScreen({ navigation }) {
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
         <Text style={styles.brand}>parkvue <Text style={{ color: THEME.secondary }}>cric-info</Text></Text>
-        <TouchableOpacity 
-          style={styles.adminBtn}
-          onPress={() => navigation.navigate('AdminDashboard')}
-        >
-          <Ionicons name="settings-outline" size={16} color={THEME.secondary} style={{marginRight: 4}} />
-          <Text style={styles.adminBtnText}>ADMIN</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+            <TouchableOpacity 
+              style={styles.analyticsBtn}
+              onPress={() => navigation.navigate('PlayerList')}
+            >
+              <Ionicons name="bar-chart-outline" size={16} color={THEME.white} />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.adminBtn}
+              onPress={() => navigation.navigate('AdminDashboard')}
+            >
+              <Ionicons name="settings-outline" size={16} color={THEME.secondary} style={{marginRight: 4}} />
+              <Text style={styles.adminBtnText}>ADMIN</Text>
+            </TouchableOpacity>
+        </View>
       </View>
 
       <Text style={styles.sectionTitle}>Current Matches</Text>
@@ -170,6 +179,15 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(25, 167, 206, 0.4)',
     flexDirection: 'row',
     alignItems: 'center'
+  },
+  analyticsBtn: {
+    backgroundColor: THEME.secondary,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3
   },
   adminBtnText: { color: THEME.secondary, fontWeight: '900', fontSize: 11, letterSpacing: 1 },
   sectionTitle: { 
