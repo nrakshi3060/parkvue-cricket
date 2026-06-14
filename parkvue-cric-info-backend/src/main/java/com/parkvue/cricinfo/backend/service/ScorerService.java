@@ -43,7 +43,10 @@ public class ScorerService {
 
     // --- Tournament Methods ---
     public List<Tournament> getAllTournaments() { return tournamentRepository.findAll(); }
-    public Tournament createTournament(Tournament tournament) { return tournamentRepository.save(tournament); }
+    public Tournament createTournament(Tournament tournament) { 
+        tournament.setStatus(normalizeStatus(tournament.getStatus()));
+        return tournamentRepository.save(tournament); 
+    }
     public Tournament getTournamentById(UUID id) { return tournamentRepository.findById(id).orElse(null); }
     
     @Transactional
@@ -52,8 +55,16 @@ public class ScorerService {
         t.setName(details.getName());
         t.setStartDate(details.getStartDate());
         t.setEndDate(details.getEndDate());
-        t.setStatus(details.getStatus());
+        t.setStatus(normalizeStatus(details.getStatus()));
         return tournamentRepository.save(t);
+    }
+    
+    private String normalizeStatus(String status) {
+        if (status == null) return "Upcoming";
+        String s = status.trim().toLowerCase();
+        if (s.equals("ongoing") || s.equals("live")) return "Ongoing";
+        if (s.equals("completed") || s.equals("finished")) return "Completed";
+        return "Upcoming"; // Default
     }
     
     @Transactional

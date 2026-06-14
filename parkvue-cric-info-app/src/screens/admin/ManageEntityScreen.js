@@ -216,7 +216,17 @@ export default function ManageEntityScreen({ route, navigation }) {
                 <Text style={styles.label}>TOURNAMENT NAME</Text>
                 <TextInput placeholder="e.g. Summer League" style={styles.input} value={formData.name} onChangeText={v => setFormData({...formData, name: v})} />
                 <Text style={styles.label}>STATUS</Text>
-                <TextInput placeholder="Upcoming" style={styles.input} value={formData.status} onChangeText={v => setFormData({...formData, status: v})} />
+                <View style={styles.chipRow}>
+                  {['Upcoming', 'Ongoing', 'Completed'].map(status => (
+                    <TouchableOpacity 
+                      key={status} 
+                      style={[styles.chip, formData.status === status && styles.chipActive]} 
+                      onPress={() => setFormData({...formData, status: status})}
+                    >
+                      <Text style={[styles.chipText, formData.status === status && styles.whiteText]}>{status}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </>
             )}
 
