@@ -187,7 +187,11 @@ const styles = StyleSheet.create({
   scorecardLinkText: { color: THEME.secondary, fontWeight: 'bold', fontSize: 11, letterSpacing: 1, marginRight: 5 },
   content: { 
     flex: 1, 
-  ...,old_string: backgroundColor: THEME.background, borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingTop: 25 },
+    backgroundColor: THEME.background, 
+    borderTopLeftRadius: 30, 
+    borderTopRightRadius: 30, 
+    paddingTop: 25 
+  },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 25, marginBottom: 20 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: THEME.primary },
   liveIndicator: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(230, 57, 70, 0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
