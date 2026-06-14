@@ -49,9 +49,9 @@ export default function HomeScreen({ navigation }) {
   const filteredData = useMemo(() => {
       const filtered = search 
         ? allMatches.filter(m => 
-            m.team1?.name.toLowerCase().includes(search.toLowerCase()) || 
-            m.team2?.name.toLowerCase().includes(search.toLowerCase()) ||
-            m.tournament?.name.toLowerCase().includes(search.toLowerCase()))
+            (m.team1?.name || '').toLowerCase().includes(search.toLowerCase()) || 
+            (m.team2?.name || '').toLowerCase().includes(search.toLowerCase()) ||
+            (m.tournament?.name || '').toLowerCase().includes(search.toLowerCase()))
         : allMatches;
 
       return {
