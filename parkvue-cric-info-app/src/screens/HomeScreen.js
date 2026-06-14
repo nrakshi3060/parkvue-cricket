@@ -117,8 +117,8 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.header}>
         <View style={styles.topRow}>
             <View style={styles.brandContainer}>
-                <Text style={styles.brandMain}>PARKVUE</Text>
-                <Text style={styles.brandSub}>CRIC</Text>
+                <Text style={styles.brandMain}>Parkvue</Text>
+                <Text style={styles.brandSub}>Cric info</Text>
             </View>
             <View style={styles.actionGroup}>
                 <TouchableOpacity onPress={() => navigation.navigate('PlayerList')} style={styles.iconBtn}>
@@ -237,8 +237,8 @@ const styles = StyleSheet.create({
   },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   brandContainer: { flexDirection: 'row', alignItems: 'center' },
-  brandMain: { fontSize: 22, fontWeight: '900', color: '#FFFFFF', letterSpacing: 1 },
-  brandSub: { fontSize: 22, fontWeight: '300', color: THEME.secondary, marginLeft: 4, letterSpacing: 1 },
+  brandMain: { fontSize: 20, fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.5 },
+  brandSub: { fontSize: 20, fontWeight: '300', color: THEME.secondary, marginLeft: 6, letterSpacing: 0.5 },
   actionGroup: { flexDirection: 'row', gap: 12 },
   iconBtn: { width: 44, height: 44, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
   searchBar: { 
