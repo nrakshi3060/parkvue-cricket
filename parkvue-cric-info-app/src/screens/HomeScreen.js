@@ -116,7 +116,10 @@ export default function HomeScreen({ navigation }) {
       {/* Premium Header */}
       <View style={styles.header}>
         <View style={styles.topRow}>
-            <Text style={styles.brand}>parkvue<Text style={{color: THEME.secondary}}>.cric</Text></Text>
+            <View style={styles.brandContainer}>
+                <Text style={styles.brandMain}>PARKVUE</Text>
+                <Text style={styles.brandSub}>CRIC</Text>
+            </View>
             <View style={styles.actionGroup}>
                 <TouchableOpacity onPress={() => navigation.navigate('PlayerList')} style={styles.iconBtn}>
                     <Ionicons name="bar-chart" size={20} color="#fff" />
@@ -233,7 +236,9 @@ const styles = StyleSheet.create({
       shadowRadius: 20
   },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  brand: { fontSize: 24, fontWeight: '900', color: '#FFFFFF', letterSpacing: -1 },
+  brandContainer: { flexDirection: 'row', alignItems: 'center' },
+  brandMain: { fontSize: 22, fontWeight: '900', color: '#FFFFFF', letterSpacing: 1 },
+  brandSub: { fontSize: 22, fontWeight: '300', color: THEME.secondary, marginLeft: 4, letterSpacing: 1 },
   actionGroup: { flexDirection: 'row', gap: 12 },
   iconBtn: { width: 44, height: 44, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
   searchBar: { 
