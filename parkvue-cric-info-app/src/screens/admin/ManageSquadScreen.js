@@ -90,9 +90,14 @@ export default function ManageSquadScreen({ route, navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <View>
-            <Text style={styles.headerTitle}>{teamName}</Text>
-            <Text style={styles.headerCount}>{squad.length} Players Selected</Text>
+        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+            <View>
+                <Text style={styles.headerTitle}>{teamName}</Text>
+                <Text style={styles.headerCount}>{squad.length} Players Selected</Text>
+            </View>
         </View>
         <Ionicons name="people-outline" size={32} color={THEME.secondary} />
       </View>
@@ -113,6 +118,7 @@ export default function ManageSquadScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: THEME.background },
   header: { padding: 25, backgroundColor: THEME.primary, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  backBtn: { marginRight: 15, padding: 5 },
   headerTitle: { color: '#fff', fontSize: 20, fontWeight: '900' },
   headerCount: { color: THEME.secondary, fontSize: 12, marginTop: 4, fontWeight: 'bold', letterSpacing: 1 },
   playerCard: { 
