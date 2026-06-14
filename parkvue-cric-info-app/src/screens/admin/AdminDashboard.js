@@ -36,7 +36,7 @@ export default function AdminDashboard({ navigation }) {
       
       {/* Standardized Admin Header */}
       <View style={styles.topHeader}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={24} color={THEME.primary} />
         </TouchableOpacity>
         <View>
